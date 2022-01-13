@@ -1,9 +1,0 @@
-#include <stdio.h>
-#include <stdlib.h>
-
-struct blockNode {
-  size_t size;
-  struct blockNode * next;
-  struct blockNode * prev;
-};
-typedef struct blockNode node;
