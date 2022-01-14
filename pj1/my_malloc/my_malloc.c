@@ -5,8 +5,8 @@
 #include <unistd.h>
 
 // declare global variables of lists
-list usedList = {NULL};
-list freeList = {NULL};
+list usedList = {NULL, NULL};
+list freeList = {NULL, NULL};
 int meta = sizeof(node *);
 
 void initNode(node * newSpace, size_t size) {
@@ -44,6 +44,9 @@ void insert(node * target, list * l, int ifUsedList) {
     if (l->head != NULL) {
       l->head->prev = target;
     }
+    else {
+      l->rear = target;
+    }
     l->head = target;
   }
   else {
@@ -56,6 +59,9 @@ void insert(node * target, list * l, int ifUsedList) {
       target->next = curr->next;
       curr->next->prev = target;
     }
+    else {
+      l->rear = target;
+    }
     target->prev = curr;
     curr->next = target;
     // merge adjacent blocks for free list
@@ -66,14 +72,36 @@ void insert(node * target, list * l, int ifUsedList) {
 }
 
 /*
+  append a node to the end of a list
+*/
+void appendNode(node * target, list * l) {
+  node * rear = l->rear;
+  if (rear == NULL) {
+    l->head = target;
+    l->rear = target;
+  }
+  else {
+    target->prev = rear;
+    rear->next = target;
+    l->rear = target;
+  }
+}
+
+/*
   remove node from a list
 */
-void removeNode(node * curr) {
+void removeNode(node * curr, list * l) {
   if (curr->prev != NULL) {
     curr->prev->next = curr->next;
   }
+  else {
+    l->head = curr->next;
+  }
   if (curr->next != NULL) {
     curr->next->prev = curr->prev;
+  }
+  else {
+    l->rear = curr->prev;
   }
   curr->next = NULL;
   curr->prev = NULL;
@@ -87,7 +115,7 @@ node * requestNewSpace(size_t size) {
   node * newSpace = (node *)sbrk(size + meta);
   initNode(newSpace, size);
   // add to usedlist
-  insert(newSpace, &usedList, 1);
+  appendNode(newSpace, &usedList);
   return newSpace;
 }
 
@@ -115,7 +143,7 @@ void * ff_malloc(size_t size) {
   while (curr != NULL) {
     if (curr->size >= size) {
       // remove curr from free space list
-      removeNode(curr);
+      removeNode(curr, &freeList);
       // split curr and put them into seperate lists
       node * allocated = splitBlock(curr, size);
       return allocated + meta;
@@ -139,7 +167,7 @@ void * bf_malloc(size_t size) {
   }
   if (match != NULL) {
     // remove curr from free space list
-    removeNode(match);
+    removeNode(match, &freeList);
     // split curr and put them into seperate lists
     node * allocated = splitBlock(match, size);
     return allocated + meta;
@@ -172,7 +200,7 @@ node * findInList(list * l, node * target) {
 void freeNode(node * curr) {
   // find this in usedlist
   if (NULL != findInList(&usedList, curr)) {
-    removeNode(curr);
+    removeNode(curr, &usedList);
     insert(curr, &freeList, 0);
   }
 }

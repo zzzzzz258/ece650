@@ -10,6 +10,7 @@ typedef struct blockNode node;
 
 struct list {
   node * head;
+  node * rear;
 };
 typedef struct list list;
 

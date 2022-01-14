@@ -4,8 +4,8 @@
 
 #include "my_malloc.h"
 
-#define NUM_ITERS 100
-#define NUM_ITEMS 10000
+#define NUM_ITERS 10
+#define NUM_ITEMS 5000  // 10000
 
 #ifdef FF
 #define MALLOC(sz) ff_malloc(sz)
@@ -73,6 +73,7 @@ int main(int argc, char * argv[]) {
 
   //Start Time
   clock_gettime(CLOCK_MONOTONIC, &start_time);
+  printf("Test started.\n");
 
   for (i = 0; i < NUM_ITERS; i++) {
     unsigned malloc_set = i % 2;
@@ -86,10 +87,12 @@ int main(int argc, char * argv[]) {
             (int *)MALLOC(malloc_items[1 - malloc_set][j + k].bytes);
       }  //for k
     }    //for j
-  }      //for i
+    printf("Iteration %d complete\n", i);
+  }  //for i
 
   //Stop Time
   clock_gettime(CLOCK_MONOTONIC, &end_time);
+  printf("Test ended.\n");
 
   data_segment_size = get_data_segment_size();
   data_segment_free_space = get_free_space_segment_size();
