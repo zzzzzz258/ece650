@@ -19,5 +19,5 @@ void ff_free(void * ptr);
 void * bf_malloc(size_t size);
 void bf_free(void * ptr);
 
-size_t get_data_segment_size();
-size_t get_free_space_segment_size();
+unsigned long get_data_segment_size();
+unsigned long get_free_space_segment_size();

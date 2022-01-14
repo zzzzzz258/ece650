@@ -128,7 +128,27 @@ void * ff_malloc(size_t size) {
   return newSpace + meta;
 }
 
-void * bf_malloc(size_t size);
+void * bf_malloc(size_t size) {
+  // find the smallest block that bigger than size
+  node * curr = freeList.head;
+  node * match = NULL;
+  while (curr != NULL) {
+    if (curr->size >= size && (match == NULL || curr->size < match->size)) {
+      match = curr;
+    }
+  }
+  if (match != NULL) {
+    // remove curr from free space list
+    removeNode(match);
+    // split curr and put them into seperate lists
+    node * allocated = splitBlock(match, size);
+    return allocated + meta;
+  }
+  // cannot find any free block to use, request for new space
+  node * newSpace = requestNewSpace(size);
+  //return the start of real data (not including metadata)
+  return newSpace + meta;
+}
 
 /*
   This function actually only checks if target is in list l
@@ -142,7 +162,7 @@ node * findInList(list * l, node * target) {
     }
     curr = curr->next;
   }
-  printf("Node not found in list!!!\n");
+  //printf("Node not found in list!!!\n");
   return NULL;
 }
 
@@ -164,7 +184,26 @@ void ff_free(void * ptr) {
   freeNode((node *)(ptr - meta));
 }
 
-void bf_free(void * ptr);
+void bf_free(void * ptr) {
+  freeNode((node *)(ptr - meta));
+}
 
-size_t get_data_segment_size();
-size_t get_free_space_segment_size();
+/*
+  sum spaces of a list, including meta
+*/
+unsigned long sum(list * l) {
+  node * curr = l->head;
+  unsigned long s = 0;
+  while (curr != NULL) {
+    s += (meta + curr->size);
+    curr = curr->next;
+  }
+  return s;
+}
+
+unsigned long get_data_segment_size() {
+  return sum(&usedList) + sum(&freeList);
+}
+unsigned long get_free_space_segment_size() {
+  return sum(&freeList);
+}
