@@ -7,7 +7,7 @@
 // declare global variables of lists
 list usedList = {NULL, NULL};
 list freeList = {NULL, NULL};
-int meta = sizeof(node *);
+int meta = sizeof(node);
 
 void initNode(node * newSpace, size_t size) {
   newSpace->next = NULL;
@@ -15,29 +15,32 @@ void initNode(node * newSpace, size_t size) {
   newSpace->size = size;
 }
 
-node * mergeTwoNodes(node * first, node * second) {
+node * mergeTwoNodes(node * first, node * second, list * l) {
+  if (second == l->rear) {
+    l->rear = first;
+  }
   first->size += (meta + second->size);
   first->next = second->next;
   return first;
 }
 
-void checkAndMerge(node * curr) {
+void checkAndMerge(node * curr, list * l) {
   // check prev
-  if (curr->prev != NULL && curr == curr->prev + curr->prev->size + meta) {
-    curr = mergeTwoNodes(curr->prev, curr);
+  if (curr->prev != NULL &&
+      (void *)curr == (void *)curr->prev + curr->prev->size + meta) {
+    curr = mergeTwoNodes(curr->prev, curr, l);
   }
   // check next
-  if (curr->next != NULL && curr + curr->size + meta == curr->next) {
-    mergeTwoNodes(curr, curr->next);
+  if (curr->next != NULL && (void *)curr + curr->size + meta == (void *)curr->next) {
+    mergeTwoNodes(curr, curr->next, l);
   }
 }
 
 /*
   insert a node into a list
   consider merging problem if list is freeList
-  ifUsedList: 1 for usedList, 0 for freelist
 */
-void insert(node * target, list * l, int ifUsedList) {
+void insert(node * target, list * l) {
   if (l->head == NULL || l->head > target) {
     // insert to the first position
     target->next = l->head;
@@ -64,10 +67,6 @@ void insert(node * target, list * l, int ifUsedList) {
     }
     target->prev = curr;
     curr->next = target;
-    // merge adjacent blocks for free list
-    if (0 == ifUsedList) {
-      checkAndMerge(target);
-    }
   }
 }
 
@@ -127,33 +126,43 @@ node * requestNewSpace(size_t size) {
 */
 node * splitBlock(node * target, size_t size) {
   if (target->size > size + meta) {
-    node * newBorn = target + size + meta;
+    node * newBorn = (node *)((void *)target + size + meta);
     initNode(newBorn, target->size - size - meta);
-    insert(newBorn, &freeList, 0);
+    insert(newBorn, &freeList);
+    checkAndMerge(newBorn, &freeList);
   }
   target->size = size;
-  insert(target, &usedList, 1);
+  insert(target, &usedList);
   return target;
+}
+
+void * real_malloc(size_t size, node * match) {
+  if (match != NULL) {
+    // remove curr from free space list
+    removeNode(match, &freeList);
+    // split curr and put them into seperate lists
+    node * allocated = splitBlock(match, size);
+    return (void *)allocated + meta;
+  }
+  // cannot find any free block to use, request for new space
+  node * newSpace = requestNewSpace(size);
+  //return the start of real data (not including metadata)
+  return (void *)newSpace + meta;
 }
 
 void * ff_malloc(size_t size) {
   // find the right(first fit free) block to use
   node * curr = freeList.head;
+  node * match = NULL;
   // fetch first
   while (curr != NULL) {
     if (curr->size >= size) {
-      // remove curr from free space list
-      removeNode(curr, &freeList);
-      // split curr and put them into seperate lists
-      node * allocated = splitBlock(curr, size);
-      return allocated + meta;
+      match = curr;
+      break;
     }
     curr = curr->next;
   }
-  // cannot find any free block to use, request for new space
-  node * newSpace = requestNewSpace(size);
-  //return the start of real data (not including metadata)
-  return newSpace + meta;
+  return real_malloc(size, match);
 }
 
 void * bf_malloc(size_t size) {
@@ -164,18 +173,9 @@ void * bf_malloc(size_t size) {
     if (curr->size >= size && (match == NULL || curr->size < match->size)) {
       match = curr;
     }
+    curr = curr->next;
   }
-  if (match != NULL) {
-    // remove curr from free space list
-    removeNode(match, &freeList);
-    // split curr and put them into seperate lists
-    node * allocated = splitBlock(match, size);
-    return allocated + meta;
-  }
-  // cannot find any free block to use, request for new space
-  node * newSpace = requestNewSpace(size);
-  //return the start of real data (not including metadata)
-  return newSpace + meta;
+  return real_malloc(size, match);
 }
 
 /*
@@ -201,7 +201,8 @@ void freeNode(node * curr) {
   // find this in usedlist
   if (NULL != findInList(&usedList, curr)) {
     removeNode(curr, &usedList);
-    insert(curr, &freeList, 0);
+    insert(curr, &freeList);
+    checkAndMerge(curr, &freeList);
   }
 }
 

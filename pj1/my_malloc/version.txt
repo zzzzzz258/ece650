@@ -3,3 +3,8 @@ v1.1: add rear to list
       modify insert, removeNode, requestNewspace
       add function appendNode
       when allocate new block of space, append the space to the rear of list, instead search and insert
+v1.2: TA: no need to consider invalid input
+      change freeNode
+      findInList deprecated
+      fix valgrind errors general test (void *)
+      more abstraction
