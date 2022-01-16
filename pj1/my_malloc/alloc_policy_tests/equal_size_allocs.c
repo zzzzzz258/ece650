@@ -55,7 +55,7 @@ int main(int argc, char * argv[]) {
   clock_gettime(CLOCK_MONOTONIC, &start_time);
 
   for (i = 0; i < NUM_ITERS; i++) {
-    printf("Loop %d\n", i);
+    //printf("Loop %d\n", i);
     for (j = 0; j < 1000; j++) {
       array[j] = (int *)MALLOC(ALLOC_SIZE);
     }  //for j

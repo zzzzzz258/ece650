@@ -9,3 +9,5 @@ v1.2: TA: no need to consider invalid input
       fix valgrind errors general test (void *)
       more abstraction
 v1.3: fix the bug of same block appering in 2 lists
+      literally pass alloc test, but performance is so bad
+v1.31: basically same as v1.3, changed a bit

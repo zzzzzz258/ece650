@@ -115,18 +115,6 @@ void removeNode(node * curr, list * l) {
 }
 
 /*
-  request new space of size (size + metadata) from system
-*/
-node * requestNewSpace(size_t size) {
-  // request new space
-  node * newSpace = (node *)sbrk(size + meta);
-  initNode(newSpace, size);
-  // add to usedlist
-  appendNode(newSpace, &usedList);
-  return newSpace;
-}
-
-/*
   split a block node
   insert first part into usedlist
   insert second part node into freelist
@@ -137,7 +125,6 @@ node * splitBlock(node * target, size_t size) {
     node * newBorn = (node *)((void *)target + meta + size);
     initNode(newBorn, target->size - size - meta);
     insert(newBorn, &freeList);
-    //    printf("splitted new block: %p\n", newBorn);
     // set size only if new block is splited
     target->size = size;
   }
@@ -145,21 +132,27 @@ node * splitBlock(node * target, size_t size) {
   return target;
 }
 
+/*
+  request new space of size (size + metadata) from system
+*/
+node * requestNewSpace(size_t size) {
+  // request new space, 2 times size
+  node * newSpace = (node *)sbrk(size * 2 + meta);
+  initNode(newSpace, size * 2);
+  return newSpace;
+}
+
 void * real_malloc(size_t size, node * match) {
-  if (match != NULL) {
-    //printf("match->prev:%p, match->next:%p\n", match->prev, match->next);
+  if (match == NULL) {
+    match = requestNewSpace(size);
+  }
+  else {
     // remove curr from free space list
     removeNode(match, &freeList);
-    //printf("Just removed the matched block\n");
-    //printFreeList();
-    // split curr and put them into seperate lists
-    node * allocated = splitBlock(match, size);
-    return (void *)allocated + meta;
   }
-  // cannot find any free block to use, request for new space
-  node * newSpace = requestNewSpace(size);
-  //return the start of real data (not including metadata)
-  return (void *)newSpace + meta;
+  // split curr and put them into seperate lists
+  node * allocated = splitBlock(match, size);
+  return (void *)allocated + meta;
 }
 
 void * ff_malloc(size_t size) {
@@ -170,7 +163,6 @@ void * ff_malloc(size_t size) {
   while (curr != NULL) {
     if (curr->size >= size) {
       match = curr;
-      //printf("Matched block:%p\n", match);
       break;
     }
     curr = curr->next;
