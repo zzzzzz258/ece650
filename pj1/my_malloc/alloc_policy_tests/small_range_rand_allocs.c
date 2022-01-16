@@ -83,8 +83,11 @@ int main(int argc, char * argv[]) {
         FREE(malloc_items[malloc_set][item_to_free].address);
       }  //for k
       for (k = 0; k < 50; k++) {
-        malloc_items[1 - malloc_set][j + k].address =
-            (int *)MALLOC(malloc_items[1 - malloc_set][j + k].bytes);
+        unsigned long toM = malloc_items[1 - malloc_set][j + k].bytes;
+        //printf("%lx\n", toM);
+        malloc_items[1 - malloc_set][j + k].address = (int *)MALLOC(toM);
+        //printFreeList();
+        //printUsedList();
       }  //for k
     }    //for j
     //printf("Iteration %d complete\n", i);

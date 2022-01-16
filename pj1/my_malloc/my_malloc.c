@@ -1,5 +1,6 @@
 #include "my_malloc.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -21,10 +22,13 @@ node * mergeTwoNodes(node * first, node * second, list * l) {
   }
   first->size += (meta + second->size);
   first->next = second->next;
+  if (second->next != NULL) {
+    second->next->prev = first;
+  }
   return first;
 }
 
-void checkAndMerge(node * curr, list * l) {
+node * checkAndMerge(node * curr, list * l) {
   // check prev
   if (curr->prev != NULL &&
       (void *)curr == (void *)curr->prev + curr->prev->size + meta) {
@@ -32,8 +36,9 @@ void checkAndMerge(node * curr, list * l) {
   }
   // check next
   if (curr->next != NULL && (void *)curr + curr->size + meta == (void *)curr->next) {
-    mergeTwoNodes(curr, curr->next, l);
+    curr = mergeTwoNodes(curr, curr->next, l);
   }
+  return curr;
 }
 
 /*
@@ -78,9 +83,12 @@ void appendNode(node * target, list * l) {
   if (rear == NULL) {
     l->head = target;
     l->rear = target;
+    target->next = NULL;
+    target->prev = NULL;
   }
   else {
     target->prev = rear;
+    target->next = NULL;
     rear->next = target;
     l->rear = target;
   }
@@ -126,20 +134,24 @@ node * requestNewSpace(size_t size) {
 */
 node * splitBlock(node * target, size_t size) {
   if (target->size > size + meta) {
-    node * newBorn = (node *)((void *)target + size + meta);
+    node * newBorn = (node *)((void *)target + meta + size);
     initNode(newBorn, target->size - size - meta);
     insert(newBorn, &freeList);
-    checkAndMerge(newBorn, &freeList);
+    //    printf("splitted new block: %p\n", newBorn);
+    // set size only if new block is splited
+    target->size = size;
   }
-  target->size = size;
   insert(target, &usedList);
   return target;
 }
 
 void * real_malloc(size_t size, node * match) {
   if (match != NULL) {
+    //printf("match->prev:%p, match->next:%p\n", match->prev, match->next);
     // remove curr from free space list
     removeNode(match, &freeList);
+    //printf("Just removed the matched block\n");
+    //printFreeList();
     // split curr and put them into seperate lists
     node * allocated = splitBlock(match, size);
     return (void *)allocated + meta;
@@ -158,6 +170,7 @@ void * ff_malloc(size_t size) {
   while (curr != NULL) {
     if (curr->size >= size) {
       match = curr;
+      //printf("Matched block:%p\n", match);
       break;
     }
     curr = curr->next;
@@ -179,31 +192,13 @@ void * bf_malloc(size_t size) {
 }
 
 /*
-  This function actually only checks if target is in list l
-  If in, return target itself, is not return NULL
-*/
-node * findInList(list * l, node * target) {
-  node * curr = l->head;
-  while (curr != NULL) {
-    if (curr == target) {
-      return curr;
-    }
-    curr = curr->next;
-  }
-  //printf("Node not found in list!!!\n");
-  return NULL;
-}
-
-/*
   real free function to free a selected block
 */
 void freeNode(node * curr) {
   // find this in usedlist
-  if (NULL != findInList(&usedList, curr)) {
-    removeNode(curr, &usedList);
-    insert(curr, &freeList);
-    checkAndMerge(curr, &freeList);
-  }
+  removeNode(curr, &usedList);
+  insert(curr, &freeList);
+  checkAndMerge(curr, &freeList);
 }
 
 /*
@@ -235,4 +230,34 @@ unsigned long get_data_segment_size() {
 }
 unsigned long get_free_space_segment_size() {
   return sum(&freeList);
+}
+
+/*
+  helper function to print block lists
+*/
+
+void printList(list * l) {
+  node * curr = l->head;
+  while (curr != NULL) {
+    printf("%p: size %lx\n", curr, curr->size);
+    if (curr == curr->next) {
+      printf("repeated element in list\n");
+      exit(EXIT_FAILURE);
+    }
+    if (curr->next == NULL) {
+      printf("rear is %p\n", l->rear);
+      assert(curr == l->rear);
+    }
+    curr = curr->next;
+  }
+}
+
+void printUsedList() {
+  printf("Used list:\n");
+  printList(&usedList);
+}
+
+void printFreeList() {
+  printf("Free list:\n");
+  printList(&freeList);
 }

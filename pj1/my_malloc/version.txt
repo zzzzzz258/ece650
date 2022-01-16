@@ -8,3 +8,4 @@ v1.2: TA: no need to consider invalid input
       findInList deprecated
       fix valgrind errors general test (void *)
       more abstraction
+v1.3: fix the bug of same block appering in 2 lists
