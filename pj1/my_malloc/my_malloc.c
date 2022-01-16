@@ -6,16 +6,24 @@
 #include <unistd.h>
 
 // declare global variables of lists
-list usedList = {NULL, NULL};
+//list usedList = {NULL, NULL};
 list freeList = {NULL, NULL};
 int meta = sizeof(node);
+unsigned long segment_size = 0;
 
+/*
+  operations directly on node 
+*/
 void initNode(node * newSpace, size_t size) {
   newSpace->next = NULL;
   newSpace->prev = NULL;
   newSpace->size = size;
 }
 
+/*
+  merge second node to the first one
+  knowing that they are adjacent
+*/
 node * mergeTwoNodes(node * first, node * second, list * l) {
   if (second == l->rear) {
     l->rear = first;
@@ -28,24 +36,10 @@ node * mergeTwoNodes(node * first, node * second, list * l) {
   return first;
 }
 
-node * checkAndMerge(node * curr, list * l) {
-  // check prev
-  if (curr->prev != NULL &&
-      (void *)curr == (void *)curr->prev + curr->prev->size + meta) {
-    curr = mergeTwoNodes(curr->prev, curr, l);
-  }
-  // check next
-  if (curr->next != NULL && (void *)curr + curr->size + meta == (void *)curr->next) {
-    curr = mergeTwoNodes(curr, curr->next, l);
-  }
-  return curr;
-}
-
 /*
   insert a node into a list
-  consider merging problem if list is freeList
 */
-void insert(node * target, list * l) {
+void insertNode(node * target, list * l) {
   if (l->head == NULL || l->head > target) {
     // insert to the first position
     target->next = l->head;
@@ -115,20 +109,35 @@ void removeNode(node * curr, list * l) {
 }
 
 /*
+  check if curr has adjacent blocks in list l, merge them if yes
+ */
+node * checkAndMerge(node * curr, list * l) {
+  // check prev
+  if (curr->prev != NULL &&
+      (void *)curr == (void *)curr->prev + curr->prev->size + meta) {
+    curr = mergeTwoNodes(curr->prev, curr, l);
+  }
+  // check next
+  if (curr->next != NULL && (void *)curr + curr->size + meta == (void *)curr->next) {
+    curr = mergeTwoNodes(curr, curr->next, l);
+  }
+  return curr;
+}
+
+/*
   split a block node
-  insert first part into usedlist
   insert second part node into freelist
   return: first node
 */
 node * splitBlock(node * target, size_t size) {
+  // only split if rest block are larger than a meta size
   if (target->size > size + meta) {
     node * newBorn = (node *)((void *)target + meta + size);
     initNode(newBorn, target->size - size - meta);
-    insert(newBorn, &freeList);
+    insertNode(newBorn, &freeList);
     // set size only if new block is splited
     target->size = size;
   }
-  insert(target, &usedList);
   return target;
 }
 
@@ -136,12 +145,15 @@ node * splitBlock(node * target, size_t size) {
   request new space of size (size + metadata) from system
 */
 node * requestNewSpace(size_t size) {
-  // request new space, 2 times size
-  node * newSpace = (node *)sbrk(size * 2 + meta);
-  initNode(newSpace, size * 2);
+  node * newSpace = (node *)sbrk(size + meta);
+  segment_size += (meta + size);
+  initNode(newSpace, size);
   return newSpace;
 }
 
+/*
+  malloc block of size from given block match
+ */
 void * real_malloc(size_t size, node * match) {
   if (match == NULL) {
     match = requestNewSpace(size);
@@ -178,6 +190,9 @@ void * bf_malloc(size_t size) {
     if (curr->size >= size && (match == NULL || curr->size < match->size)) {
       match = curr;
     }
+    if (match != NULL && match->size <= size + meta) {
+      break;
+    }
     curr = curr->next;
   }
   return real_malloc(size, match);
@@ -186,10 +201,8 @@ void * bf_malloc(size_t size) {
 /*
   real free function to free a selected block
 */
-void freeNode(node * curr) {
-  // find this in usedlist
-  removeNode(curr, &usedList);
-  insert(curr, &freeList);
+void real_free(node * curr) {
+  insertNode(curr, &freeList);
   checkAndMerge(curr, &freeList);
 }
 
@@ -197,15 +210,16 @@ void freeNode(node * curr) {
   ptr is a pointer to real data, which follows metadata
 */
 void ff_free(void * ptr) {
-  freeNode((node *)(ptr - meta));
+  real_free((node *)(ptr - meta));
 }
 
 void bf_free(void * ptr) {
-  freeNode((node *)(ptr - meta));
+  real_free((node *)(ptr - meta));
 }
 
 /*
   sum spaces of a list, including meta
+  used for performance comparasion
 */
 unsigned long sum(list * l) {
   node * curr = l->head;
@@ -218,7 +232,7 @@ unsigned long sum(list * l) {
 }
 
 unsigned long get_data_segment_size() {
-  return sum(&usedList) + sum(&freeList);
+  return segment_size;
 }
 unsigned long get_free_space_segment_size() {
   return sum(&freeList);
@@ -242,11 +256,6 @@ void printList(list * l) {
     }
     curr = curr->next;
   }
-}
-
-void printUsedList() {
-  printf("Used list:\n");
-  printList(&usedList);
 }
 
 void printFreeList() {
