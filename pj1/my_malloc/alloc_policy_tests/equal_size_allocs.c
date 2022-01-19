@@ -67,7 +67,7 @@ int main(int argc, char * argv[]) {
       if ((i == NUM_ITERS / 2) && (j == NUM_ITEMS / 2)) {
         //Record fragmentation halfway through (try to repsresent steady state)
         data_segment_size = get_data_segment_size();
-        data_segment_free_space = get_free_space_segment_size();
+        data_segment_free_space = get_data_segment_free_space_size();
       }  //if
     }    //for j
 

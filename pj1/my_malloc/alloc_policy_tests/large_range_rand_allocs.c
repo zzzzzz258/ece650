@@ -92,7 +92,7 @@ int main(int argc, char * argv[]) {
   clock_gettime(CLOCK_MONOTONIC, &end_time);
 
   data_segment_size = get_data_segment_size();
-  data_segment_free_space = get_free_space_segment_size();
+  data_segment_free_space = get_data_segment_free_space_size();
 
   double elapsed_ns = calc_time(start_time, end_time);
   printf("Execution Time = %f seconds\n", elapsed_ns / 1e9);

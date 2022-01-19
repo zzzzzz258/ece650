@@ -98,7 +98,7 @@ int main(int argc, char * argv[]) {
   //  printf("Test ended.\n");
 
   data_segment_size = get_data_segment_size();
-  data_segment_free_space = get_free_space_segment_size();
+  data_segment_free_space = get_data_segment_free_space_size();
   printf("data_segment_size = %lu, data_segment_free_space = %lu\n",
          data_segment_size,
          data_segment_free_space);
