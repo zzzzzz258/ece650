@@ -234,7 +234,7 @@ unsigned long sum(list * l) {
 unsigned long get_data_segment_size() {
   return segment_size;
 }
-unsigned long get_free_space_segment_size() {
+unsigned long get_data_segment_free_space_size() {
   return sum(&freeList);
 }
 

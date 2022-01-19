@@ -21,7 +21,7 @@ void * bf_malloc(size_t size);
 void bf_free(void * ptr);
 
 unsigned long get_data_segment_size();
-unsigned long get_free_space_segment_size();
+unsigned long get_data_segment_free_space_size();
 
 void printUsedList();
 void printFreeList();
