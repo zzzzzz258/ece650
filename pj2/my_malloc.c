@@ -11,8 +11,12 @@
 list freeList = {NULL, NULL};
 int meta = sizeof(node);
 unsigned long segment_size = 0;
-pthread_rwlock_t x = PTHREAD_RWLOCK_INITIALIZER;
+
+// Lock for thread safe
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+// Thread Local Storage free list
+__thread list tls_freeList = {NULL, NULL};
 
 /*
   operations directly on node 
@@ -128,13 +132,13 @@ node * checkAndMerge(node * curr, list * l) {
   insert second part node into freelist
   return: first node
 */
-node * splitBlock(node * target, size_t size) {
+node * splitBlock(node * target, size_t size, list * l) {
   // only split if rest block are larger than a meta size
   if (target->size > size + meta) {
     // split out a new block and free it
     node * newBorn = (node *)((void *)target + meta + size);
     initNode(newBorn, target->size - size - meta);
-    findPositionAndInsertNode(newBorn, &freeList);
+    findPositionAndInsertNode(newBorn, l);
     // set size only if new block is splited
     target->size = size;
   }
@@ -144,8 +148,16 @@ node * splitBlock(node * target, size_t size) {
 /*
   request new space of size (size + metadata) from system
 */
-node * requestNewSpace(size_t size) {
-  node * newSpace = (node *)sbrk(size + meta);
+node * requestNewSpace(size_t size, int isLock) {
+  node * newSpace;
+  if (isLock) {
+    newSpace = (node *)sbrk(size + meta);
+  }
+  else {
+    pthread_mutex_lock(&lock);
+    newSpace = (node *)sbrk(size + meta);
+    pthread_mutex_unlock(&lock);
+  }
   segment_size += (meta + size);
   initNode(newSpace, size);
   return newSpace;
@@ -154,23 +166,23 @@ node * requestNewSpace(size_t size) {
 /*
   malloc block of size from given block match
  */
-void * real_malloc(size_t size, node * match) {
+void * real_malloc(size_t size, node * match, list * l, int isLock) {
   if (match == NULL) {
-    match = requestNewSpace(size);
+    match = requestNewSpace(size, isLock);
   }
   else {
     // remove curr from free space list
-    removeNode(match, &freeList);
+    removeNode(match, l);
   }
   match->isFree = 0;
   // split curr and put them into seperate lists
-  node * allocated = splitBlock(match, size);
+  node * allocated = splitBlock(match, size, l);
   return (void *)allocated + meta;
 }
 
-node * findBestFit(size_t size) {
+node * findBestFit(size_t size, list * l) {
   // find the smallest block that bigger than size
-  node * curr = freeList.head;
+  node * curr = l->head;
   node * match = NULL;
   while (curr != NULL) {
     if (curr->size >= size && (match == NULL || curr->size < match->size)) {
@@ -184,85 +196,34 @@ node * findBestFit(size_t size) {
   return match;
 }
 
-void * bf_malloc(size_t size) {
-  node * match = findBestFit(size);
-  void * ans = real_malloc(size, match);
+/*
+ * Best Fit malloc
+ */
+void * bf_malloc(size_t size, list * l, int isLock) {
+  node * match = findBestFit(size, l);
+  void * ans = real_malloc(size, match, l, isLock);
   return ans;
 }
 
 void * ts_malloc_lock(size_t size) {
-  /*
-  while (1) {
-    pthread_rwlock_rdlock(&x);
-    node * match = findBestFit(size);
-    pthread_rwlock_unlock(&x);
-
-    pthread_rwlock_wrlock(&x);
-    if (match != NULL && match->isFree == 0) {
-      // race condition occurs
-      pthread_rwlock_unlock(&x);
-      continue;
-    }
-    void * ans = real_malloc(size, match);
-    pthread_rwlock_unlock(&x);
-
-    return ans;
-  }
-  */
   pthread_mutex_lock(&lock);
-  void * ans = bf_malloc(size);
+  void * ans = bf_malloc(size, &freeList, 1);
   pthread_mutex_unlock(&lock);
   return ans;
 }
 
 void * ts_malloc_nolock(size_t size) {
-  return NULL;
-}
-
-int isPositionInsertedOrMergedToPrev(node * pos, node * target, list * l) {
-  if (pos == NULL && l->head < target) {
-    return 0;
-  }
-  if (pos->next < target) {
-    return 0;
-  }
-  if (pos->prev != NULL && pos->prev + pos->prev->size > pos) {
-    // pos is merged
-    return 0;
-  }
-  return 1;
+  return bf_malloc(size, &tls_freeList, 0);
 }
 
 /*
-  real free function to free a selected block
+ * real free function to free a selected block 
 */
-void real_free(node * curr) {
+void real_free(node * curr, list * l) {
   curr->isFree = 1;
-  node * prev = findPositionToInsert(curr, &freeList);
-  insertNode(curr, prev, &freeList);
-  checkAndMerge(curr, &freeList);
-}
-
-/*
-  real free function to free a selected block
-*/
-void ts_real_free(node * curr) {
-  while (1) {
-    pthread_rwlock_rdlock(&x);
-    node * prev = findPositionToInsert(curr, &freeList);
-    pthread_rwlock_unlock(&x);
-
-    pthread_rwlock_wrlock(&x);
-    if (0 == isPositionInsertedOrMergedToPrev(prev, curr, &freeList)) {
-      // race condition occurs
-      pthread_rwlock_unlock(&x);
-      continue;
-    }
-    curr->isFree = 1;
-    insertNode(curr, prev, &freeList);
-    checkAndMerge(curr, &freeList);
-    pthread_rwlock_unlock(&x);
-  }
+  node * prev = findPositionToInsert(curr, l);
+  insertNode(curr, prev, l);
+  checkAndMerge(curr, l);
 }
 
 /*
@@ -271,10 +232,10 @@ void ts_real_free(node * curr) {
 
 void ts_free_lock(void * ptr) {
   pthread_mutex_lock(&lock);
-  real_free((node *)(ptr - meta));
+  real_free((node *)(ptr - meta), &freeList);
   pthread_mutex_unlock(&lock);
 }
 
 void ts_free_nolock(void * ptr) {
-  real_free((node *)(ptr - meta));
+  real_free((node *)(ptr - meta), &tls_freeList);
 }
