@@ -12,6 +12,7 @@ list freeList = {NULL, NULL};
 int meta = sizeof(node);
 unsigned long segment_size = 0;
 pthread_rwlock_t x = PTHREAD_RWLOCK_INITIALIZER;
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
   operations directly on node 
@@ -183,7 +184,14 @@ node * findBestFit(size_t size) {
   return match;
 }
 
+void * bf_malloc(size_t size) {
+  node * match = findBestFit(size);
+  void * ans = real_malloc(size, match);
+  return ans;
+}
+
 void * ts_malloc_lock(size_t size) {
+  /*
   while (1) {
     pthread_rwlock_rdlock(&x);
     node * match = findBestFit(size);
@@ -200,11 +208,11 @@ void * ts_malloc_lock(size_t size) {
 
     return ans;
   }
-  /*
-  node * match = findBestFit(size);
-  void * ans = real_malloc(size, match);
-  return ans;
   */
+  pthread_mutex_lock(&lock);
+  void * ans = bf_malloc(size);
+  pthread_mutex_unlock(&lock);
+  return ans;
 }
 
 void * ts_malloc_nolock(size_t size) {
@@ -262,9 +270,9 @@ void ts_real_free(node * curr) {
 */
 
 void ts_free_lock(void * ptr) {
-  pthread_rwlock_wrlock(&x);
+  pthread_mutex_lock(&lock);
   real_free((node *)(ptr - meta));
-  pthread_rwlock_unlock(&x);
+  pthread_mutex_unlock(&lock);
 }
 
 void ts_free_nolock(void * ptr) {
