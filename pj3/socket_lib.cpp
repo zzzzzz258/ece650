@@ -71,7 +71,6 @@ int build_client(const char * _hostname, const char * _port) {
   struct addrinfo *host_info_list;
   const char *hostname = _hostname;
   const char *port     = _port;
-
   
   memset(&host_info, 0, sizeof(host_info));
   host_info.ai_family   = AF_UNSPEC;
