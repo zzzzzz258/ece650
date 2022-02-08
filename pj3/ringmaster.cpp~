@@ -9,6 +9,11 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
+  if (argc != 4) {
+    cout << "Syntax: ringmaster <port_num> <num_players> <num_hops>" << endl;
+    return 1;
+  }
+
   int status;
   int socket_fd;
   struct addrinfo host_info;
