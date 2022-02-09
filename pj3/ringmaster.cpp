@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
     server_addr[server_hostname.length()] = ':';
     strcpy(server_addr+server_hostname.length()+1, server_port.c_str());
 
-    /*
+    
     cout << "Ready to send out hostname: " << server_hostname_c << endl;
     cout << "Ready to send out port: " << server_port_c << endl;
     
@@ -114,11 +114,11 @@ int main(int argc, char *argv[])
 
     send(client_fd, server_port_c, strlen(server_port_c), 0);
     cout << "Send out port: " << server_port_c << endl;    
-    */
-
+    
+    /*
     cout << "Ready to send " << server_addr << endl;
     send(client_fd, server_addr, strlen(server_addr), 0);
-    
+    */
   }
 
   for (int fd: player_socketfd) {

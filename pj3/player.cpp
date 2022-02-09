@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 
   
   // receive left neighbor server info from ringmaster
-  /*
+  
   char left_player_hostname[128];
   char left_player_port[6];
   int n;
@@ -74,14 +74,14 @@ int main(int argc, char *argv[])
 
   cout << left_player_hostname << endl;
   cout << left_player_port << endl;
-  */
-
+  
+  /*
   char left_player_addr[128];
   int n ;
   n = recv(socket_fd_ringmaster, left_player_addr, 128, 0);
   left_player_addr[n] = 0;
   cout << "Receviced: " << left_player_addr << endl;
-
+  */
   /*
   int msg = 1;
   send(socket_fd_ringmaster, &msg, sizeof(msg), 0);
