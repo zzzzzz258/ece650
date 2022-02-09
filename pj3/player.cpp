@@ -117,9 +117,8 @@ int main(int argc, char *argv[])
 
     select(maxfd+1, &readfds, NULL, NULL, NULL);
     if (FD_ISSET(socket_fd_ringmaster, &readfds)) {
-      int n = recv(socket_fd_ringmaster, &p, sizeof(p), 0);
+      int n = recv(socket_fd_ringmaster, &p, sizeof(p), 0);      
       if (p.left_hops == 0) {
-        //TODO
         break;
       }
     }
@@ -128,13 +127,16 @@ int main(int argc, char *argv[])
       recv(source_player, &p, sizeof(p), 0);
       if (p.left_hops == 0) {
         // game ends, send information to ringmaster
-        // TODO
-        break;
+        send(socket_fd_ringmaster, &p ,sizeof(p), 0);
+        cout << "I'm it" << endl;
+        continue;
       }      
     }
     else {
       continue;
     }
+
+    // update potato and pass it to next if received from other
     p.trace[p.used_hops] = id;
     p.used_hops++;
     p.left_hops--;

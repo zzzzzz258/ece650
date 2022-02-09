@@ -2,6 +2,7 @@
 #include <cstring>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <algorithm>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <string>
@@ -122,12 +123,7 @@ int main(int argc, char *argv[])
     */
   }
 
-  // mechanism to select
-  fd_set readfds;
-  for (int i = 0; i < num_players; i++) {
-    FD_SET(player_socketfd[i], &readfds);
-  }
-
+  
   // recv ack(1) from every player, print message
   for (int i = 0; i < num_players; i++) {
     int msg;
@@ -162,6 +158,28 @@ int main(int argc, char *argv[])
   int random = rand() % num_players;
   send(player_socketfd[random], &p, sizeof(p), 0);
   cout << "Ready to start the game, sending potato to player " << random << endl;
+
+  // receive potato from player, print trace and give it back to them
+  // mechanism to select
+  fd_set readfds;
+  for (int i = 0; i < num_players; i++) {
+    FD_SET(player_socketfd[i], &readfds);
+  }
+  int max_fd = *max_element(player_socketfd.begin(), player_socketfd.end());
+  select(max_fd+1, &readfds, NULL, NULL, NULL);
+  for (int i = 0; i < num_players; i++) {
+    if (FD_ISSET(player_socketfd[i], &readfds)) {
+      recv(player_socketfd[i], &p, sizeof(p), 0);      
+      break;
+    }
+  }
+  // print trace
+  cout << "Trace of potato:" << endl;
+  for (int i = 0; i < num_hops-1; i++) {
+    cout << p.trace[i] << "," ;
+  }
+  cout << p.trace[num_hops-1] << endl;
+  
 
   
   // end application
