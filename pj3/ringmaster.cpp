@@ -145,26 +145,28 @@ int main(int argc, char *argv[])
   for (int i = 0; i < POTATO_TRACESIZE; i++) {
     p.trace[i] = -1;
   }
-  srand((unsigned int) time(NULL) + num_players);
-  int random = rand() % num_players;
-  send(player_socketfd[random], &p, sizeof(p), 0);
-  cout << "Ready to start the game, sending potato to player " << random << endl;
-
-  // receive potato from player, print trace and give it back to them
-  // mechanism to select
-  fd_set readfds;
-  for (int i = 0; i < num_players; i++) {
-    FD_SET(player_socketfd[i], &readfds);
-  }
-  int max_fd = *max_element(player_socketfd.begin(), player_socketfd.end());
-  select(max_fd+1, &readfds, NULL, NULL, NULL);
-  for (int i = 0; i < num_players; i++) {
-    if (FD_ISSET(player_socketfd[i], &readfds)) {
-      recv(player_socketfd[i], &p, sizeof(p), 0);      
-      break;
-    }
-  }
+  // only send potato if number hops > 0
   if (num_hops > 0) {
+    srand((unsigned int) time(NULL) + num_players);
+    int random = rand() % num_players;
+    send(player_socketfd[random], &p, sizeof(p), 0);
+    cout << "Ready to start the game, sending potato to player " << random << endl;
+
+    // receive potato from player, print trace and give it back to them
+    // mechanism to select
+    fd_set readfds;
+    for (int i = 0; i < num_players; i++) {
+      FD_SET(player_socketfd[i], &readfds);
+    }
+    int max_fd = *max_element(player_socketfd.begin(), player_socketfd.end());
+    select(max_fd+1, &readfds, NULL, NULL, NULL);
+    for (int i = 0; i < num_players; i++) {
+      if (FD_ISSET(player_socketfd[i], &readfds)) {
+        recv(player_socketfd[i], &p, sizeof(p), 0);      
+        break;
+      }
+    }
+  
     // print trace
     cout << "Trace of potato:" << endl;
     for (int i = 0; i < num_hops-1; i++) {
