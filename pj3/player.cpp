@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
     }
 
     // update potato and pass it to next if received from other
-    p.trace[p.used_hops] = id;
+    p.trace[p.used_hops-1] = id;
     p.used_hops++;
     p.left_hops--;
     int random = rand()%2;
