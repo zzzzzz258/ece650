@@ -116,20 +116,24 @@ int main(int argc, char *argv[])
     FD_SET(right_player_fd, &readfds);
 
     select(maxfd+1, &readfds, NULL, NULL, NULL);
+    bool to_master = false;
     if (FD_ISSET(socket_fd_ringmaster, &readfds)) {
       int n = recv(socket_fd_ringmaster, &p, sizeof(p), 0);      
       if (p.left_hops == 0) {
         break;
       }
+      else if (p.left_hops == 1) {
+        // only this one hop
+        to_master = true;
+      }
     }
     else if (FD_ISSET(left_player_fd, &readfds) || FD_ISSET(right_player_fd, &readfds)) {
       int source_player = FD_ISSET(left_player_fd, &readfds) ? left_player_fd : right_player_fd;      
       recv(source_player, &p, sizeof(p), 0);
-      if (p.left_hops == 0) {
-        // game ends, send information to ringmaster
-        send(socket_fd_ringmaster, &p ,sizeof(p), 0);
+      if (p.left_hops == 1) {
+        // game ends, send information to ringmaster        
         cout << "I'm it" << endl;
-        continue;
+        to_master = true;
       }      
     }
     else {
@@ -137,9 +141,13 @@ int main(int argc, char *argv[])
     }
 
     // update potato and pass it to next if received from other
-    p.trace[p.used_hops-1] = id;
+    p.trace[p.used_hops] = id;
     p.used_hops++;
     p.left_hops--;
+    if (to_master) {
+      send(socket_fd_ringmaster, &p, sizeof(p), 0);
+      continue;
+    }
     int random = rand()%2;
     if (random%2 == 0) {
       send(left_player_fd, &p, sizeof(p), 0);

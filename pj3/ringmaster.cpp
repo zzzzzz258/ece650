@@ -149,8 +149,8 @@ int main(int argc, char *argv[])
   
   // initialize a potato and give it to a random player
   potato p;
-  p.left_hops = num_hops-1;
-  p.used_hops = 1;
+  p.left_hops = num_hops;
+  p.used_hops = 0;
   for (int i = 0; i < POTATO_TRACESIZE; i++) {
     p.trace[i] = -1;
   }
