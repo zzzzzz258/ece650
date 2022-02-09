@@ -179,7 +179,10 @@ int main(int argc, char *argv[])
     cout << p.trace[i] << "," ;
   }
   cout << p.trace[num_hops-1] << endl;
-  
+  // send empty back
+  for (int i = 0; i < num_players; i++) {
+    send(player_socketfd[i], &p, sizeof(p), 0);
+  }
 
   
   // end application
