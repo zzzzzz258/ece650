@@ -99,12 +99,12 @@ int main(int argc, char *argv[])
     char server_port_c[server_port.length()+1];
     strcpy(server_hostname_c, server_hostname.c_str());
     strcpy(server_port_c, server_port.c_str());
-
+    /*
     char server_addr[server_hostname.length() + server_port.length() + 2];
     strcpy(server_addr, server_hostname.c_str());
     server_addr[server_hostname.length()] = ':';
     strcpy(server_addr+server_hostname.length()+1, server_port.c_str());
-
+    */
     
     cout << "Ready to send out hostname: " << server_hostname_c << endl;
     cout << "Ready to send out port: " << server_port_c << endl;

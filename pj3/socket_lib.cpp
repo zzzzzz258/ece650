@@ -75,6 +75,7 @@ void connect_to_server(int socket_fd,
 
 /**
  * Build a client socket connecting to given host
+ * @return socket_fd is the created socket_fd for this connection as client
  */
 int build_client(const char * _hostname, const char * _port) {
   int status;

@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   gethostname(my_hostname, 128);
 
   //cout << my_hostname << endl;
-  cout << "My server port is " << right_server_port << endl;
+  //cout << "My server port is " << right_server_port << endl;
   
   // build a server socket
   int right_server_fd = build_server(right_server_port);
@@ -72,8 +72,8 @@ int main(int argc, char *argv[])
   cout << "Receive port number size is " << n << endl;
   left_player_port[n] = 0;
 
-  cout << left_player_hostname << endl;
-  cout << left_player_port << endl;
+  //cout << left_player_hostname << endl;
+  //cout << left_player_port << endl;
   
   /*
   char left_player_addr[128];
@@ -87,9 +87,12 @@ int main(int argc, char *argv[])
   send(socket_fd_ringmaster, &msg, sizeof(msg), 0);
   */
 
+  // connect to left player
+  int left_player_fd = build_client(left_player_hostname, left_player_port);
+  
   // send msg to ringmaster to indicate that all connections are successfuly established
   int msg = 1;
-  send(socket_fd_ringmaster, &msg, sizeof(msg), 0);
+  send(socket_fd_ringmaster, &msg, sizeof(msg), 0);  
   
   // game ends, close sockets 
   n = recv(socket_fd_ringmaster, NULL, 0, 0);
