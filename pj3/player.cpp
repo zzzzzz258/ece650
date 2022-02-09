@@ -88,12 +88,27 @@ int main(int argc, char *argv[])
   send(socket_fd_ringmaster, &msg, sizeof(msg), 0);
   */
 
-  // connect to left player
-  int left_player_fd = build_client(left_player_hostname, left_player_port);
+  int left_player_fd, right_player_fd;
+  if (id == 1) {    
+    // connect to left player
+    left_player_fd = build_client(left_player_hostname, left_player_port);
+    right_player_fd = server_accept(right_server_fd);
+  } else {
+    right_player_fd = server_accept(right_server_fd);
+    left_player_fd = build_client(left_player_hostname, left_player_port);
+  }    
   
   // send msg to ringmaster to indicate that all connections are successfuly established
   int msg = 1;
   send(socket_fd_ringmaster, &msg, sizeof(msg), 0);  
+
+  // set selector
+  fd_set readfds;
+  FD_SET(socket_fd_ringmaster, &readfds);
+  FD_SET(left_player_fd, &readfds);
+  FD_SET(right_player_fd, &readfds);
+  
+
   
   // game ends, close sockets 
   n = recv(socket_fd_ringmaster, NULL, 0, 0);
