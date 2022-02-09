@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     send(connection_socket_fd, &i, sizeof(i), 0);
     send(connection_socket_fd, &num_players, sizeof(num_players), 0);    
 
-    cout << "Player " << i << " is ready to play" << endl;
+    
 
     // receive and store address and port of this player
     char player_hostname[128];
@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
     
 
     // for testing
-    cout << "Receive new player hostname: " << player_hostname << endl;
-    cout << "Receive player port: " << player_port << endl;
+    //cout << "Receive new player hostname: " << player_hostname << endl;
+    //cout << "Receive player port: " << player_port << endl;
 
     // put data into vector
     player_hostnames.push_back(string(player_hostname));
@@ -119,6 +119,26 @@ int main(int argc, char *argv[])
     cout << "Ready to send " << server_addr << endl;
     send(client_fd, server_addr, strlen(server_addr), 0);
     */
+  }
+
+  // mechanism to select
+  fd_set readfds;
+  for (int i = 0; i < num_players; i++) {
+    FD_SET(player_socketfd[i], &readfds);
+  }
+
+  // recv ack(1) from every player, print message
+  for (int i = 0; i < num_players; i++) {
+    int msg;
+    int player_fd = player_socketfd[i];    
+    recv(player_fd, &msg, sizeof(msg), 0);
+    if (msg == 1) {
+    cout << "Player " << i << " is ready to play" << endl;
+    }
+    else {
+      cout << "Unexpected message" << endl;
+      exit(EXIT_FAILURE);
+    }
   }
 
   for (int fd: player_socketfd) {

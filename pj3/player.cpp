@@ -86,8 +86,12 @@ int main(int argc, char *argv[])
   int msg = 1;
   send(socket_fd_ringmaster, &msg, sizeof(msg), 0);
   */
+
+  // send msg to ringmaster to indicate that all connections are successfuly established
+  int msg = 1;
+  send(socket_fd_ringmaster, &msg, sizeof(msg), 0);
   
-  // game ends, close sockets
+  // game ends, close sockets 
   n = recv(socket_fd_ringmaster, NULL, 0, 0);
   if (n == 0) {
     close(socket_fd_ringmaster);
