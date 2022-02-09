@@ -61,6 +61,18 @@ int build_server(const char * select_port) {
   return socket_fd;
 }
 
+void connect_to_server(int socket_fd,
+                       struct addrinfo * server_info,
+                       const char * hostname,
+                       const char * port) {
+  int status = connect(socket_fd, server_info->ai_addr, server_info->ai_addrlen);
+  if (status == -1) {
+    cerr << "Error: cannot connect to socket" << endl;
+    cerr << "  (" << hostname << "," << port << ")" << endl;
+    exit(EXIT_FAILURE);
+  } //if
+}
+
 /**
  * Build a client socket connecting to given host
  */
@@ -92,14 +104,7 @@ int build_client(const char * _hostname, const char * _port) {
     exit(EXIT_FAILURE);
   } //if
 
-  status = connect(socket_fd, host_info_list->ai_addr, host_info_list->ai_addrlen);
-  if (status == -1) {
-    cerr << "Error: cannot connect to socket" << endl;
-    cerr << "  (" << hostname << "," << port << ")" << endl;
-    exit(EXIT_FAILURE);
-  } //if
-
-
+  connect_to_server(socket_fd, host_info_list, hostname, port);
   
   freeaddrinfo(host_info_list);
   return socket_fd;
@@ -118,9 +123,21 @@ int server_accept(int server_socket_fd) {
     cerr << "Error: cannot accept connection on socket" << endl;
     exit(EXIT_FAILURE);
   } //if
+  //struct sockaddr_in * addr = (struct sockaddr_in *)&socket_addr;
+  //*ip = inet
   return client_connection_fd;
 }
 
+int get_port(int socket_fd) {
+  // only for IPV4
+  struct sockaddr_in sin;
+  socklen_t len = sizeof(sin);
+  if (getsockname(socket_fd, (struct sockaddr *)&sin, &len) != 0) {
+    cout << "Cannot get sockname" << endl;
+    exit(EXIT_FAILURE);
+  }
+  return ntohs(sin.sin_port);
+}
 
 bool is_number(char* str) {
   char * pos = str;

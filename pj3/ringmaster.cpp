@@ -38,6 +38,8 @@ int main(int argc, char *argv[])
   }
   
   vector<int> player_socketfd;
+  vector<string> player_hostnames;
+  vector<string> player_ports;
   
   cout << "Potato Ringmaster" << endl;
   cout << "Players = " << num_players << endl;
@@ -47,6 +49,7 @@ int main(int argc, char *argv[])
   int socket_fd = build_server(port);
 
   // manage players connecting in, allocating their ID to them
+  // get and store their hostnames and ports
   for (int i = 0; i < num_players; i++) {
     // accept connection with player
     int connection_socket_fd = server_accept(socket_fd);
@@ -60,13 +63,62 @@ int main(int argc, char *argv[])
 
     // receive and store address and port of this player
     char player_hostname[128];
-    char player_port[5];
-    //now only print these two for testing
-    recv(connection_socket_fd, player_hostname, 128, 0);    
-    recv(connection_socket_fd, player_port, 5, 0);
+    char player_port[6];
+    int player_port_num;
+    int n = 0;
+    n = recv(connection_socket_fd, player_hostname, 128, 0);
+    player_hostname[n] = 0;
+    n = recv(connection_socket_fd, player_port, 6, 0);
+    player_port[n] = 0;
+    //string s = to_string(player_port_num);
+    //strcpy(player_port, s.c_str());
+    
 
-    cout << player_hostname << endl;
-    cout << player_port << endl;
+    // for testing
+    cout << "Receive new player hostname: " << player_hostname << endl;
+    cout << "Receive player port: " << player_port << endl;
+
+    // put data into vector
+    player_hostnames.push_back(string(player_hostname));
+    player_ports.push_back(string(player_port));
+  }
+
+  
+  // sending neighbouring information to players
+  // every player are the server to their right neighbor  
+  for (int i = 0; i < num_players; i++) {
+    // i is the owner of information(server), pi is the receiver(client)
+    int pi = (i+1)%num_players;
+    int n;
+    int client_fd = player_socketfd[pi];
+    string server_hostname = player_hostnames[i];
+    string server_port = player_ports[i];
+
+    // convert from string to char *
+    char server_hostname_c[server_hostname.length()+1];
+    char server_port_c[server_port.length()+1];
+    strcpy(server_hostname_c, server_hostname.c_str());
+    strcpy(server_port_c, server_port.c_str());
+
+    char server_addr[server_hostname.length() + server_port.length() + 2];
+    strcpy(server_addr, server_hostname.c_str());
+    server_addr[server_hostname.length()] = ':';
+    strcpy(server_addr+server_hostname.length()+1, server_port.c_str());
+
+    /*
+    cout << "Ready to send out hostname: " << server_hostname_c << endl;
+    cout << "Ready to send out port: " << server_port_c << endl;
+    
+    send(client_fd, server_hostname_c, strlen(server_hostname_c), 0);    
+    cout << "Send out hostname: " << server_hostname_c << endl;
+
+    send(client_fd, server_port_c, strlen(server_port_c), 0);
+    cout << "Send out port: " << server_port_c << endl;    
+    */
+
+    cout << "Ready to send " << server_addr << endl;
+    send(client_fd, server_addr, strlen(server_addr), 0);
+    
   }
 
   for (int fd: player_socketfd) {
