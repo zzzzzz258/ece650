@@ -104,17 +104,33 @@ int main(int argc, char *argv[])
 
   // set selector
   fd_set readfds;
+  int maxfd = max(right_player_fd, max(socket_fd_ringmaster, left_player_fd));
+  potato p;
+  
   FD_SET(socket_fd_ringmaster, &readfds);
   FD_SET(left_player_fd, &readfds);
   FD_SET(right_player_fd, &readfds);
-  
 
+  select(maxfd+1, &readfds, NULL, NULL, NULL);
+  if (FD_ISSET(socket_fd_ringmaster, &readfds)) {
+    int n = recv(socket_fd_ringmaster, &p, sizeof(p), 0);
+    if (p.left_hops > 0) {
+      cout << "get potato with left hops:" << p.left_hops << endl;
+    }
+    else {
+      // end of game, todo later
+    }
+  }
+  
+  
   
   // game ends, close sockets 
   n = recv(socket_fd_ringmaster, NULL, 0, 0);
   if (n == 0) {
     close(socket_fd_ringmaster);
     close(right_server_fd);
+    close(left_player_fd);
+    close(right_player_fd);
   }
 
   return 0;

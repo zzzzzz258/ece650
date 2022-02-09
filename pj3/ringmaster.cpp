@@ -161,7 +161,9 @@ int main(int argc, char *argv[])
   int random = rand() % num_players;
   send(player_socketfd[random], &p, sizeof(p), 0);
   cout << "Ready to start the game, sending potato to player " << random << endl;
+
   
+  // end application
   for (int fd: player_socketfd) {
     close(fd);
   }
