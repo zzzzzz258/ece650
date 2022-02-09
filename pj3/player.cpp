@@ -106,19 +106,46 @@ int main(int argc, char *argv[])
   fd_set readfds;
   int maxfd = max(right_player_fd, max(socket_fd_ringmaster, left_player_fd));
   potato p;
-  
-  FD_SET(socket_fd_ringmaster, &readfds);
-  FD_SET(left_player_fd, &readfds);
-  FD_SET(right_player_fd, &readfds);
+  srand((unsigned int) time(NULL) + total_players);
 
-  select(maxfd+1, &readfds, NULL, NULL, NULL);
-  if (FD_ISSET(socket_fd_ringmaster, &readfds)) {
-    int n = recv(socket_fd_ringmaster, &p, sizeof(p), 0);
-    if (p.left_hops > 0) {
-      cout << "get potato with left hops:" << p.left_hops << endl;
+  while (true) {
+    FD_ZERO(&readfds);
+    
+    FD_SET(socket_fd_ringmaster, &readfds);
+    FD_SET(left_player_fd, &readfds);
+    FD_SET(right_player_fd, &readfds);
+
+    select(maxfd+1, &readfds, NULL, NULL, NULL);
+    if (FD_ISSET(socket_fd_ringmaster, &readfds)) {
+      int n = recv(socket_fd_ringmaster, &p, sizeof(p), 0);
+      if (p.left_hops > 0) {
+        cout << "get potato with left hops:" << p.left_hops << endl;
+      }
+      else {
+        // game ends
+        break;
+      }
     }
-    else {
-      // end of game, todo later
+    if (FD_ISSET(left_player_fd, &readfds) || FD_ISSET(right_player_fd, &readfds)) {
+      int source_player = FD_ISSET(left_player_fd, &readfds) ? left_player_fd : right_player_fd;      
+      recv(source_player, &p, sizeof(p), 0);
+      if (p.left_hops == 0) {
+        // game ends, send information to ringmaster
+        // TODO
+        break;
+      }
+      p.trace[p.used_hops] = id;
+      p.used_hops++;
+      p.left_hops--;
+      int random = rand()%2;
+      if (random%2 == 0) {
+        send(left_player_fd, &p, sizeof(p), 0);
+        cout << "Sending potato to " << (id-1+total_players)%total_players << endl;
+      }
+      else {
+        send(right_player_fd, &p, sizeof(p), 0);
+        cout << "Sending potato to " << (id+1)%total_players << endl;
+      }
     }
   }
   
