@@ -138,15 +138,6 @@ int main(int argc, char *argv[])
     }
   }
 
-  // coner case
-  if (num_hops == 0) {
-    for (int fd: player_socketfd) {
-      close(fd);
-    }
-    close(socket_fd);
-    return 0;
-  }
-  
   // initialize a potato and give it to a random player
   potato p;
   p.left_hops = num_hops;
@@ -173,12 +164,14 @@ int main(int argc, char *argv[])
       break;
     }
   }
-  // print trace
-  cout << "Trace of potato:" << endl;
-  for (int i = 0; i < num_hops-1; i++) {
-    cout << p.trace[i] << "," ;
+  if (num_hops > 0) {
+    // print trace
+    cout << "Trace of potato:" << endl;
+    for (int i = 0; i < num_hops-1; i++) {
+      cout << p.trace[i] << "," ;
+    }
+    cout << p.trace[num_hops-1] << endl;
   }
-  cout << p.trace[num_hops-1] << endl;
   // send empty back
   for (int i = 0; i < num_players; i++) {
     send(player_socketfd[i], &p, sizeof(p), 0);
