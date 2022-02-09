@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "socket_lib.h"
+#include "potato.h"
 
 using namespace std;
 
@@ -66,10 +67,10 @@ int main(int argc, char *argv[])
   int n;
   n = recv(socket_fd_ringmaster, left_player_hostname, 128, 0);
   left_player_hostname[n] = 0;
-  cout << "Receive left neighbor hostname: " << left_player_hostname << endl;
+  //  cout << "Receive left neighbor hostname: " << left_player_hostname << endl;
 
   n = recv(socket_fd_ringmaster, left_player_port, 6, 0);
-  cout << "Receive port number size is " << n << endl;
+  //  cout << "Receive port number size is " << n << endl;
   left_player_port[n] = 0;
 
   //cout << left_player_hostname << endl;

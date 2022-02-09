@@ -1,0 +1,5 @@
+struct _potato {
+  int left_hops;
+  int trace[1000];
+};
+typedef struct _potato potato;

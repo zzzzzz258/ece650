@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "socket_lib.h"
+#include "potato.h"
 
 using namespace std;
 
@@ -106,14 +107,14 @@ int main(int argc, char *argv[])
     strcpy(server_addr+server_hostname.length()+1, server_port.c_str());
     */
     
-    cout << "Ready to send out hostname: " << server_hostname_c << endl;
-    cout << "Ready to send out port: " << server_port_c << endl;
+    //cout << "Ready to send out hostname: " << server_hostname_c << endl;
+    //cout << "Ready to send out port: " << server_port_c << endl;
     
     send(client_fd, server_hostname_c, strlen(server_hostname_c), 0);    
-    cout << "Send out hostname: " << server_hostname_c << endl;
+    //cout << "Send out hostname: " << server_hostname_c << endl;
 
     send(client_fd, server_port_c, strlen(server_port_c), 0);
-    cout << "Send out port: " << server_port_c << endl;    
+    //cout << "Send out port: " << server_port_c << endl;    
     
     /*
     cout << "Ready to send " << server_addr << endl;
@@ -141,6 +142,26 @@ int main(int argc, char *argv[])
     }
   }
 
+  // coner case
+  if (num_hops == 0) {
+    for (int fd: player_socketfd) {
+      close(fd);
+    }
+    close(socket_fd);
+    return 0;
+  }
+  
+  // initialize a potato and give it to a random player
+  potato p;
+  p.left_hops = num_hops;
+  for (int i = 0; i < POTATO_TRACESIZE; i++) {
+    p.trace[i] = -1;
+  }
+  srand((unsigned int) time(NULL) + num_players);
+  int random = rand() % num_players;
+  send(player_socketfd[random], &p, sizeof(p), 0);
+  cout << "Ready to start the game, sending potato to player " << random << endl;
+  
   for (int fd: player_socketfd) {
     close(fd);
   }
