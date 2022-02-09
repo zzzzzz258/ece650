@@ -124,6 +124,7 @@ int main(int argc, char *argv[])
       }
       else if (p.left_hops == 1) {
         // only this one hop
+        cout << "I'm it" << endl;
         to_master = true;
       }
     }
