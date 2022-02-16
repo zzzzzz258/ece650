@@ -80,7 +80,7 @@ int main(int argc, char * argv[]) {
   char left_player_hostname[128];
   char left_player_port[10] = {0};
   int n;
-  n = recv(socket_fd_ringmaster, left_player_hostname, 128, MSG_WAITALL);
+  n = recv(socket_fd_ringmaster, left_player_hostname, sizeof(left_player_hostname), 0);
   left_player_hostname[n] = 0;
   cout << "Receive left neighbor hostname: " << left_player_hostname << endl;
 
