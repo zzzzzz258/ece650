@@ -61,8 +61,6 @@ int main(int argc, char *argv[])
     send(connection_socket_fd, &i, sizeof(i), 0);
     send(connection_socket_fd, &num_players, sizeof(num_players), 0);    
 
-    
-
     // receive and store address and port of this player
     char player_hostname[128];
     char player_port[6];
