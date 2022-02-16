@@ -61,17 +61,17 @@ int main(int argc, char *argv[])
     // send id, total players to connected player
     send(connection_socket_fd, &i, sizeof(i), 0);
     send(connection_socket_fd, &num_players, sizeof(num_players), 0);    
-
+    
+    
     // receive and store address and port of this player
     char player_hostname[128];
-    char player_port[6];
+    char player_port[10] = {0};
     int player_port_num;
     int n = 0;
     //n = recv(connection_socket_fd, player_hostname, 128, 0);
     strcpy(player_hostname, hostname_s.c_str());
     //player_hostname[n] = 0;
-    n = recv(connection_socket_fd, player_port, 6, 0);
-    player_port[n] = 0;
+    n = recv(connection_socket_fd, player_port, sizeof(player_port), 0);
     //string s = to_string(player_port_num);
     //strcpy(player_port, s.c_str());
     

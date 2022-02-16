@@ -65,7 +65,7 @@ int main(int argc, char * argv[]) {
   getsockname(right_server_fd, (struct sockaddr *)&addr, &len);
   // TODO: not checking return value
   int use_port = ntohs(addr.sin_port);
-  char right_server_port[5];
+  char right_server_port[10] = {0};
   sprintf(right_server_port, "%d", use_port);
 
   // send server information to ringmaster
@@ -78,15 +78,14 @@ int main(int argc, char * argv[]) {
   // receive left neighbor server info from ringmaster
 
   char left_player_hostname[128];
-  char left_player_port[6];
+  char left_player_port[10] = {0};
   int n;
   n = recv(socket_fd_ringmaster, left_player_hostname, 128, MSG_WAITALL);
   left_player_hostname[n] = 0;
   //  cout << "Receive left neighbor hostname: " << left_player_hostname << endl;
 
-  n = recv(socket_fd_ringmaster, left_player_port, 6, 0);
+  n = recv(socket_fd_ringmaster, left_player_port, sizeof(left_player_port), 0);
   //  cout << "Receive port number size is " << n << endl;
-  left_player_port[n] = 0;
 
   //cout << left_player_hostname << endl;
   //cout << left_player_port << endl;
