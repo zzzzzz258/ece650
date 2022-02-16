@@ -61,7 +61,8 @@ int main(int argc, char *argv[])
     // send id, total players to connected player
     send(connection_socket_fd, &i, sizeof(i), 0);
     send(connection_socket_fd, &num_players, sizeof(num_players), 0);    
-    
+
+    std::cout << "sent id" << std::endl;
     
     // receive and store address and port of this player
     char player_hostname[128];
@@ -78,7 +79,7 @@ int main(int argc, char *argv[])
 
     // for testing
     //cout << "Receive new player hostname: " << player_hostname << endl;
-    //cout << "Receive player port: " << player_port << endl;
+    cout << "Receive player port: " << player_port << endl;
 
     // put data into vector
     player_hostnames.push_back(string(player_hostname));
@@ -105,10 +106,10 @@ int main(int argc, char *argv[])
     //cout << "Ready to send out port: " << server_port_c << endl;
     
     send(client_fd, server_hostname_c, strlen(server_hostname_c), 0);    
-    //cout << "Send out hostname: " << server_hostname_c << endl;
+    cout << "Send out hostname: " << server_hostname_c << endl;
 
     send(client_fd, server_port_c, strlen(server_port_c), 0);
-    //cout << "Send out port: " << server_port_c << endl;    
+    cout << "Send out port: " << server_port_c << endl;    
     
     /*
     cout << "Ready to send " << server_addr << endl;
