@@ -54,7 +54,8 @@ int main(int argc, char *argv[])
   // get and store their hostnames and ports
   for (int i = 0; i < num_players; i++) {
     // accept connection with player
-    int connection_socket_fd = server_accept(socket_fd);
+    string hostname_s;
+    int connection_socket_fd = server_accept(socket_fd, hostname_s);
     player_socketfd.push_back(connection_socket_fd);
 
     // send id, total players to connected player
@@ -66,8 +67,9 @@ int main(int argc, char *argv[])
     char player_port[6];
     int player_port_num;
     int n = 0;
-    n = recv(connection_socket_fd, player_hostname, 128, 0);
-    player_hostname[n] = 0;
+    //n = recv(connection_socket_fd, player_hostname, 128, 0);
+    strcpy(player_hostname, hostname_s.c_str());
+    //player_hostname[n] = 0;
     n = recv(connection_socket_fd, player_port, 6, 0);
     player_port[n] = 0;
     //string s = to_string(player_port_num);
@@ -99,13 +101,6 @@ int main(int argc, char *argv[])
     char server_port_c[server_port.length()+1];
     strcpy(server_hostname_c, server_hostname.c_str());
     strcpy(server_port_c, server_port.c_str());
-    /*
-    char server_addr[server_hostname.length() + server_port.length() + 2];
-    strcpy(server_addr, server_hostname.c_str());
-    server_addr[server_hostname.length()] = ':';
-    strcpy(server_addr+server_hostname.length()+1, server_port.c_str());
-    */
-    
     //cout << "Ready to send out hostname: " << server_hostname_c << endl;
     //cout << "Ready to send out port: " << server_port_c << endl;
     

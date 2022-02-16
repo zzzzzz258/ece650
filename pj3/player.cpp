@@ -69,7 +69,7 @@ int main(int argc, char * argv[]) {
   sprintf(right_server_port, "%d", use_port);
 
   // send server information to ringmaster
-  send(socket_fd_ringmaster, my_hostname, strlen(my_hostname), 0);  // hostname
+  //send(socket_fd_ringmaster, my_hostname, strlen(my_hostname), 0);  // hostname
   send(socket_fd_ringmaster,
        right_server_port,
        strlen(right_server_port),
@@ -80,7 +80,7 @@ int main(int argc, char * argv[]) {
   char left_player_hostname[128];
   char left_player_port[6];
   int n;
-  n = recv(socket_fd_ringmaster, left_player_hostname, 128, 0);
+  n = recv(socket_fd_ringmaster, left_player_hostname, 128, MSG_WAITALL);
   left_player_hostname[n] = 0;
   //  cout << "Receive left neighbor hostname: " << left_player_hostname << endl;
 
@@ -107,10 +107,12 @@ int main(int argc, char * argv[]) {
   if (id == 1) {
     // connect to left player
     left_player_fd = build_client(left_player_hostname, left_player_port);
-    right_player_fd = server_accept(right_server_fd);
+    string s;
+    right_player_fd = server_accept(right_server_fd, s);
   }
   else {
-    right_player_fd = server_accept(right_server_fd);
+    string s;
+    right_player_fd = server_accept(right_server_fd, s);
     left_player_fd = build_client(left_player_hostname, left_player_port);
   }
 

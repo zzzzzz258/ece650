@@ -115,17 +115,17 @@ int build_client(const char * _hostname, const char * _port) {
  * server socket behavior
  * accpet a connection with error check, return the new socket with connection
  */
-int server_accept(int server_socket_fd) {
+int server_accept(int server_socket_fd, std::string & s) {
   int client_connection_fd;
-  struct sockaddr socket_addr;
+  struct sockaddr_storage socket_addr;
   socklen_t socket_addr_len = sizeof(socket_addr);
   client_connection_fd = accept(server_socket_fd, (struct sockaddr *)&socket_addr, &socket_addr_len);
   if (client_connection_fd == -1) {
     cerr << "Error: cannot accept connection on socket" << endl;
     exit(EXIT_FAILURE);
   } //if
-  //struct sockaddr_in * addr = (struct sockaddr_in *)&socket_addr;
-  //*ip = inet
+  struct sockaddr_in * addr = (struct sockaddr_in *)&socket_addr;
+  s = inet_ntoa(addr->sin_addr);
   return client_connection_fd;
 }
 
