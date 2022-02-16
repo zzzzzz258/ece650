@@ -1,18 +1,19 @@
-#include <iostream>
-#include <cstring>
-#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netdb.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
-#include "socket_lib.h"
+#include <cstring>
+#include <iostream>
+
 #include "potato.h"
+#include "socket_lib.h"
 
 using namespace std;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char * argv[]) {
   if (argc != 3) {
     cout << "Syntax: player <machine_name> <port_num>" << endl;
     exit(EXIT_FAILURE);
@@ -21,14 +22,14 @@ int main(int argc, char *argv[])
   if (argv_number_check(argv, 2, "port_num")) {
     return 1;
   }
-    
+
   if (argc < 2) {
-      cout << "Syntax: client <hostname>\n" << endl;
-      return 1;
+    cout << "Syntax: client <hostname>\n" << endl;
+    return 1;
   }
 
-  const char *hostname = argv[1];
-  const char *port     = argv[2];
+  const char * hostname = argv[1];
+  const char * port = argv[2];
 
   // get a socket connecting to ringmaster
   int socket_fd_ringmaster = build_client(hostname, port);
@@ -38,30 +39,44 @@ int main(int argc, char *argv[])
   // receive setup messages from ringmaster
   recv(socket_fd_ringmaster, &id, sizeof(id), 0);
   recv(socket_fd_ringmaster, &total_players, sizeof(total_players), 0);
-  
-  cout << "Connected as player " << id << " out of " << total_players << " total players" << endl;
 
+  cout << "Connected as player " << id << " out of " << total_players << " total players"
+       << endl;
+
+  /*
   // get the hostname and port for this process as server
   char right_server_port[5];
   int use_port = 2512 + id;
   sprintf(right_server_port, "%d", use_port);
-  
+  */
+
   char my_hostname[128];
   gethostname(my_hostname, 128);
 
   //cout << my_hostname << endl;
   //cout << "My server port is " << right_server_port << endl;
-  
+
   // build a server socket
-  int right_server_fd = build_server(right_server_port);
+  //  int right_server_fd = build_server(right_server_port);
+  int right_server_fd = build_server("");
+
+  struct sockaddr_in addr;
+  socklen_t len = sizeof(addr);
+  getsockname(right_server_fd, (struct sockaddr *)&addr, &len);
+  // TODO: not checking return value
+  int use_port = ntohs(addr.sin_port);
+  char right_server_port[5];
+  sprintf(right_server_port, "%d", use_port);
 
   // send server information to ringmaster
   send(socket_fd_ringmaster, my_hostname, strlen(my_hostname), 0);  // hostname
-  send(socket_fd_ringmaster, right_server_port, strlen(right_server_port), 0);  // port number
+  send(socket_fd_ringmaster,
+       right_server_port,
+       strlen(right_server_port),
+       0);  // port number
 
-  
   // receive left neighbor server info from ringmaster
-  
+
   char left_player_hostname[128];
   char left_player_port[6];
   int n;
@@ -75,7 +90,7 @@ int main(int argc, char *argv[])
 
   //cout << left_player_hostname << endl;
   //cout << left_player_port << endl;
-  
+
   /*
   char left_player_addr[128];
   int n ;
@@ -89,36 +104,37 @@ int main(int argc, char *argv[])
   */
 
   int left_player_fd, right_player_fd;
-  if (id == 1) {    
+  if (id == 1) {
     // connect to left player
     left_player_fd = build_client(left_player_hostname, left_player_port);
     right_player_fd = server_accept(right_server_fd);
-  } else {
+  }
+  else {
     right_player_fd = server_accept(right_server_fd);
     left_player_fd = build_client(left_player_hostname, left_player_port);
-  }    
-  
+  }
+
   // send msg to ringmaster to indicate that all connections are successfuly established
   int msg = 1;
-  send(socket_fd_ringmaster, &msg, sizeof(msg), 0);  
+  send(socket_fd_ringmaster, &msg, sizeof(msg), 0);
 
   // set selector
   fd_set readfds;
   int maxfd = max(right_player_fd, max(socket_fd_ringmaster, left_player_fd));
   potato p;
-  srand((unsigned int) time(NULL) + total_players);
+  srand((unsigned int)time(NULL) + total_players);
 
   while (true) {
     FD_ZERO(&readfds);
-    
+
     FD_SET(socket_fd_ringmaster, &readfds);
     FD_SET(left_player_fd, &readfds);
     FD_SET(right_player_fd, &readfds);
 
-    select(maxfd+1, &readfds, NULL, NULL, NULL);
+    select(maxfd + 1, &readfds, NULL, NULL, NULL);
     bool to_master = false;
     if (FD_ISSET(socket_fd_ringmaster, &readfds)) {
-      int n = recv(socket_fd_ringmaster, &p, sizeof(p), 0);      
+      int n = recv(socket_fd_ringmaster, &p, sizeof(p), 0);
       if (p.left_hops == 0) {
         break;
       }
@@ -129,13 +145,14 @@ int main(int argc, char *argv[])
       }
     }
     else if (FD_ISSET(left_player_fd, &readfds) || FD_ISSET(right_player_fd, &readfds)) {
-      int source_player = FD_ISSET(left_player_fd, &readfds) ? left_player_fd : right_player_fd;      
+      int source_player =
+          FD_ISSET(left_player_fd, &readfds) ? left_player_fd : right_player_fd;
       recv(source_player, &p, sizeof(p), 0);
       if (p.left_hops == 1) {
-        // game ends, send information to ringmaster        
+        // game ends, send information to ringmaster
         cout << "I'm it" << endl;
         to_master = true;
-      }      
+      }
     }
     else {
       continue;
@@ -149,20 +166,18 @@ int main(int argc, char *argv[])
       send(socket_fd_ringmaster, &p, sizeof(p), 0);
       continue;
     }
-    int random = rand()%2;
-    if (random%2 == 0) {
+    int random = rand() % 2;
+    if (random % 2 == 0) {
       send(left_player_fd, &p, sizeof(p), 0);
-      cout << "Sending potato to " << (id-1+total_players)%total_players << endl;
+      cout << "Sending potato to " << (id - 1 + total_players) % total_players << endl;
     }
     else {
       send(right_player_fd, &p, sizeof(p), 0);
-      cout << "Sending potato to " << (id+1)%total_players << endl;
+      cout << "Sending potato to " << (id + 1) % total_players << endl;
     }
   }
-  
-  
-  
-  // game ends, close sockets 
+
+  // game ends, close sockets
   n = recv(socket_fd_ringmaster, NULL, 0, 0);
   if (n == 0) {
     close(socket_fd_ringmaster);
