@@ -101,6 +101,7 @@ int main(int argc, char * argv[]) {
 
   // send msg to ringmaster to indicate that all connections are successfuly established
   int msg = 1;
+    cout << "confirmation ready to send" << endl;
   send(socket_fd_ringmaster, &msg, sizeof(msg), 0);
   // TESTing
   cout << "confirmation sent" << endl;
