@@ -66,16 +66,14 @@ int main(int argc, char *argv[])
     
     // receive and store address and port of this player
     char player_hostname[128];
-    char player_port[10] = {0};
-    int player_port_num;
+    char player_port[10] = {0};    
     int n = 0;
-    //n = recv(connection_socket_fd, player_hostname, 128, 0);
     strcpy(player_hostname, hostname_s.c_str());
-    //player_hostname[n] = 0;
-    n = recv(connection_socket_fd, player_port, sizeof(player_port), 0);
-    //string s = to_string(player_port_num);
-    //strcpy(player_port, s.c_str());
+    if (strcmp( player_hostname, "127.0.0.1") == 0) {
+      gethostname(player_hostname, 128);
+    }
     
+    n = recv(connection_socket_fd, player_port, sizeof(player_port), 0);    
 
     // for testing
     //cout << "Receive new player hostname: " << player_hostname << endl;
@@ -97,6 +95,8 @@ int main(int argc, char *argv[])
     string server_hostname = player_hostnames[i];
     string server_port = player_ports[i];
 
+    string message(server_hostname + "|" + server_port);
+
     // convert from string to char *
     char server_hostname_c[server_hostname.length()+1];
     char server_port_c[server_port.length()+1];
@@ -104,17 +104,15 @@ int main(int argc, char *argv[])
     strcpy(server_port_c, server_port.c_str());
     //cout << "Ready to send out hostname: " << server_hostname_c << endl;
     //cout << "Ready to send out port: " << server_port_c << endl;
-    
-    send(client_fd, server_hostname_c, strlen(server_hostname_c), 0);    
-    cout << "Send out hostname: " << server_hostname_c << endl;
 
-    send(client_fd, server_port_c, strlen(server_port_c), 0);
-    cout << "Send out port: " << server_port_c << endl;    
-    
-    /*
-    cout << "Ready to send " << server_addr << endl;
-    send(client_fd, server_addr, strlen(server_addr), 0);
-    */
+    send(client_fd, message.c_str(), message.length(), 0);    
+    //send(client_fd, server_hostname_c, strlen(server_hostname_c), 0);    
+    //    cout << "Send out hostname: " << server_hostname_c << endl;
+    cout << "Send out: " << message << endl;
+
+    int port = atoi(server_port_c);
+    //    send(client_fd, &port, sizeof(int), 0);
+    //    cout << "Send out port: " << port << endl;        
   }
 
   

@@ -43,18 +43,8 @@ int main(int argc, char * argv[]) {
   cout << "Connected as player " << id << " out of " << total_players << " total players"
        << endl;
 
-  /*
-  // get the hostname and port for this process as server
-  char right_server_port[5];
-  int use_port = 2512 + id;
-  sprintf(right_server_port, "%d", use_port);
-  */
-
-  char my_hostname[128];
-  gethostname(my_hostname, 128);
-
-  //cout << my_hostname << endl;
-  //cout << "My server port is " << right_server_port << endl;
+  //char my_hostname[128];
+  //gethostname(my_hostname, 128);
 
   // build a server socket
   //  int right_server_fd = build_server(right_server_port);
@@ -77,30 +67,30 @@ int main(int argc, char * argv[]) {
 
   // receive left neighbor server info from ringmaster
 
-  char left_player_hostname[128];
+  char left_player_hostname[128] = {0};
+  char message[128] = {0};
+  int lpp;
   char left_player_port[10] = {0};
   int n;
-  n = recv(socket_fd_ringmaster, left_player_hostname, sizeof(left_player_hostname), 0);
+  //n = recv(socket_fd_ringmaster, left_player_hostname, sizeof(left_player_hostname), 0);
+  n = recv(socket_fd_ringmaster, message, sizeof(message), 0);
   left_player_hostname[n] = 0;
-  cout << "Receive left neighbor hostname: " << left_player_hostname << endl;
+  std::string msgs(message);
+  size_t lpos = msgs.find('|');
+  std::string l_hostname = msgs.substr(0, lpos);
+  std::string l_port = msgs.substr(lpos+1, msgs.length() - 1 - lpos);
+  cout << "Receive left neighbor hostname: " << l_hostname << endl;
 
-  n = recv(socket_fd_ringmaster, left_player_port, sizeof(left_player_port), 0);
-   cout << "Receive port number size is " << n << endl;
+  //n = recv(socket_fd_ringmaster, &lpp, sizeof(lpp), 0);
+  //sprintf(left_player_port, "%d", lpp);
+   cout << "Receive port number is " << l_port << endl;
 
+  strcpy(left_player_hostname,l_hostname.c_str());
+  strcpy(left_player_port,l_port.c_str());
+   
+   
   //cout << left_player_hostname << endl;
   //cout << left_player_port << endl;
-
-  /*
-  char left_player_addr[128];
-  int n ;
-  n = recv(socket_fd_ringmaster, left_player_addr, 128, 0);
-  left_player_addr[n] = 0;
-  cout << "Receviced: " << left_player_addr << endl;
-  */
-  /*
-  int msg = 1;
-  send(socket_fd_ringmaster, &msg, sizeof(msg), 0);
-  */
 
   int left_player_fd, right_player_fd;
   if (id == 1) {
