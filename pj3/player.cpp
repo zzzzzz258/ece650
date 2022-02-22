@@ -89,14 +89,16 @@ int main(int argc, char * argv[]) {
   int left_player_fd, right_player_fd;
   if (id == 1) {
     // connect to left player
-    left_player_fd = build_client(left_player_hostname, left_player_port);
+
     string s;
     right_player_fd = server_accept(right_server_fd, s);
+        left_player_fd = build_client(left_player_hostname, left_player_port);
   }
   else {
+    left_player_fd = build_client(left_player_hostname, left_player_port);
     string s;
     right_player_fd = server_accept(right_server_fd, s);
-    left_player_fd = build_client(left_player_hostname, left_player_port);
+
   }
 
   // send msg to ringmaster to indicate that all connections are successfuly established
