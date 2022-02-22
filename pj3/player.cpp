@@ -69,29 +69,21 @@ int main(int argc, char * argv[]) {
 
   char left_player_hostname[128] = {0};
   char message[128] = {0};
-  int lpp;
   char left_player_port[10] = {0};
   int n;
   //n = recv(socket_fd_ringmaster, left_player_hostname, sizeof(left_player_hostname), 0);
   n = recv(socket_fd_ringmaster, message, sizeof(message), 0);
-  left_player_hostname[n] = 0;
   std::string msgs(message);
   size_t lpos = msgs.find('|');
   std::string l_hostname = msgs.substr(0, lpos);
-  std::string l_port = msgs.substr(lpos+1, msgs.length() - 1 - lpos);
-  cout << "Receive left neighbor hostname: " << l_hostname << endl;
-
-  //n = recv(socket_fd_ringmaster, &lpp, sizeof(lpp), 0);
-  //sprintf(left_player_port, "%d", lpp);
-   cout << "Receive port number is " << l_port << endl;
+  std::string l_port = msgs.substr(lpos+1, msgs.length() - 1 - lpos);    
 
   strcpy(left_player_hostname,l_hostname.c_str());
   strcpy(left_player_port,l_port.c_str());
-   
-   
-  //cout << left_player_hostname << endl;
-  //cout << left_player_port << endl;
 
+  cout << "Receive left neighbor hostname: " << left_player_hostname << endl;
+  cout << "Receive port number is " << left_player_port << endl;
+  
   int left_player_fd, right_player_fd;
   if (id == 1) {
     // connect to left player

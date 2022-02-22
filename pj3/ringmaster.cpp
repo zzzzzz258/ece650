@@ -98,21 +98,8 @@ int main(int argc, char *argv[])
     string message(server_hostname + "|" + server_port);
 
     // convert from string to char *
-    char server_hostname_c[server_hostname.length()+1];
-    char server_port_c[server_port.length()+1];
-    strcpy(server_hostname_c, server_hostname.c_str());
-    strcpy(server_port_c, server_port.c_str());
-    //cout << "Ready to send out hostname: " << server_hostname_c << endl;
-    //cout << "Ready to send out port: " << server_port_c << endl;
-
     send(client_fd, message.c_str(), message.length(), 0);    
-    //send(client_fd, server_hostname_c, strlen(server_hostname_c), 0);    
-    //    cout << "Send out hostname: " << server_hostname_c << endl;
     cout << "Send out: " << message << endl;
-
-    int port = atoi(server_port_c);
-    //    send(client_fd, &port, sizeof(int), 0);
-    //    cout << "Send out port: " << port << endl;        
   }
 
   
