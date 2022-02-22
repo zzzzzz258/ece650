@@ -55,14 +55,16 @@ int main(int argc, char * argv[]) {
   getsockname(right_server_fd, (struct sockaddr *)&addr, &len);
   // TODO: not checking return value
   int use_port = ntohs(addr.sin_port);
-  char right_server_port[10] = {0};
-  sprintf(right_server_port, "%d", use_port);
+  char my_port[10] = {0};
+  sprintf(my_port, "%d", use_port);
+  char my_hostname[128] = {0};
+  gethostname(my_hostname, 128);
+  string sendout(string(my_hostname)+"|"+string(my_port));
 
   // send server information to ringmaster
-  //send(socket_fd_ringmaster, my_hostname, strlen(my_hostname), 0);  // hostname
   send(socket_fd_ringmaster,
-       right_server_port,
-       strlen(right_server_port),
+       sendout.c_str(),
+       sendout.length(),
        0);  // port number
 
   // receive left neighbor server info from ringmaster

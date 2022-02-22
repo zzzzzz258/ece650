@@ -72,16 +72,22 @@ int main(int argc, char *argv[])
     if (strcmp( player_hostname, "127.0.0.1") == 0) {
       gethostname(player_hostname, 128);
     }
-    
-    n = recv(connection_socket_fd, player_port, sizeof(player_port), 0);    
+
+    char player_msg[128] = {0};
+    n = recv(connection_socket_fd, player_msg, 128, 0);
+    std::string msgs(player_msg);
+    size_t lpos = msgs.find('|');
+    std::string hostname = msgs.substr(0, lpos);
+    std::string port = msgs.substr(lpos+1, msgs.length() - 1 - lpos);    
+
 
     // for testing
     //cout << "Receive new player hostname: " << player_hostname << endl;
     cout << "Receive player port: " << player_port << endl;
 
     // put data into vector
-    player_hostnames.push_back(string(player_hostname));
-    player_ports.push_back(string(player_port));
+    player_hostnames.push_back(hostname);
+    player_ports.push_back(port);
   }
 
   
