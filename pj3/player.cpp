@@ -83,8 +83,8 @@ int main(int argc, char * argv[]) {
   strcpy(left_player_hostname,l_hostname.c_str());
   strcpy(left_player_port,l_port.c_str());
 
-  cout << "Receive left neighbor hostname: " << left_player_hostname << endl;
-  cout << "Receive port number is " << left_player_port << endl;
+  //  cout << "Receive left neighbor hostname: " << left_player_hostname << endl;
+  //  cout << "Receive port number is " << left_player_port << endl;
   
   int left_player_fd, right_player_fd;
   if (id == 1) {
