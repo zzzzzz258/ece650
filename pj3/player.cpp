@@ -102,7 +102,9 @@ int main(int argc, char * argv[]) {
   // send msg to ringmaster to indicate that all connections are successfuly established
   int msg = 1;
   send(socket_fd_ringmaster, &msg, sizeof(msg), 0);
-
+  // TESTing
+  cout << "confirmation sent" << endl;
+  
   // set selector
   fd_set readfds;
   int maxfd = max(right_player_fd, max(socket_fd_ringmaster, left_player_fd));
