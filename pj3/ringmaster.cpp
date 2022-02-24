@@ -29,8 +29,8 @@ int main(int argc, char *argv[])
   const int num_players = atoi(argv[2]);
   const int num_hops = atoi(argv[3]);
 
-  if (num_players < 1) {
-    cout << "player number must be positive" << endl;
+  if (num_players < 2) {
+    cout << "player number is at least 2" << endl;
     exit(EXIT_FAILURE);
   }
 
