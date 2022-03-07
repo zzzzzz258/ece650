@@ -63,10 +63,10 @@ void createTables(connection & c) {
     "UNIFORM_NUM INT,"                                                  \
     "FIRST_NAME VARCHAR(256),"                                          \
     "LAST_NAME VARCHAR(256),"                                           \
-    "MPG DOUBLE PRECISION,"                                                          \
-    "PPG DOUBLE PRECISION,"                                                          \
-    "RPG DOUBLE PRECISION,"                                                          \
-    "APG DOUBLE PRECISION,"                                                          \
+    "MPG INT,"                                                          \
+    "PPG INT,"                                                          \
+    "RPG INT,"                                                          \
+    "APG INT,"                                                          \
     "SPG DOUBLE PRECISION,"                                             \
     "BPG DOUBLE PRECISION,"                                             \
     "PRIMARY KEY (PLAYER_ID),"                                          \
@@ -78,25 +78,17 @@ void createTables(connection & c) {
 }
 
 void initializeColor(connection & c) {
-  work w(c);
   ifstream file("color.txt");
-  string line;
-  string presql("INSERT INTO COLOR (COLOR_ID, NAME) VALUES (");
-  string sufsql(");\n");
+  string line;  
   if (file.is_open())   {
     stringstream ss;
     while (getline(file, line)) {
       int p, pre = 0;
-      ss << presql;
       p = line.find(' ');
-      ss << line.substr(pre, p-pre);
       pre = p+1;
-      ss << ", '" << line.substr(pre) << "'";
-      ss << sufsql;
+      add_color(&c, line.substr(pre));
     }
     file.close();
-    w.exec(ss.str());
-    w.commit();
     cout << "Table color initialized" << endl;
   }
   else {    
@@ -105,25 +97,17 @@ void initializeColor(connection & c) {
 }
 
 void initializeState(connection & c) {
-  work w(c);
   ifstream file("state.txt");
-  string line;
-  string presql("INSERT INTO STATE (STATE_ID, NAME) VALUES (");
-  string sufsql(");\n");
+  string line;  
   if (file.is_open())   {
     stringstream ss;
     while (getline(file, line)) {
       int p, pre = 0;
-      ss << presql;
       p = line.find(' ');
-      ss << line.substr(pre, p-pre);
       pre = p+1;
-      ss << ", '" << line.substr(pre) << "'";
-      ss << sufsql;
+      add_state(&c, line.substr(pre));
     }
     file.close();
-    w.exec(ss.str());
-    w.commit();
     cout << "Table state initialized" << endl;
   }
   else {    
@@ -132,37 +116,30 @@ void initializeState(connection & c) {
 }
 
 void initializeTeam(connection & c) {
-  work w(c);
   ifstream file("team.txt");
   string line;
-  string presql("INSERT INTO TEAM (TEAM_ID, NAME, STATE_ID, COLOR_ID, WINS, LOSSES) VALUES (");
-  string sufsql(");\n");
   if (file.is_open())   {
     stringstream ss;
     while (getline(file, line)) {
       int p, pre = 0;
-      ss << presql;
       p = line.find(' ');
-      ss << line.substr(pre, p-pre);
       pre = p+1;
       p = line.find(' ', pre);
-      ss << ", '" << line.substr(pre, p-pre) << "'";
-      while (true) {
+      string name = line.substr(pre, p-pre);
+      int args[4];
+      for (int i =0; i < 4; i++) {
         pre = p+1;
         p = line.find(' ',pre);
-        if (p == string::npos) {
-          ss << ", " << line.substr(pre);
-          break;
+        if (i == 3) {
+          args[i] = atoi(line.substr(pre).c_str());
         }
         else {          
-          ss << ", " << line.substr(pre, p-pre);
+          args[i] = atoi(line.substr(pre, p-pre).c_str());
         }
-      }      
-      ss << sufsql;
+      }
+      add_team(&c, name, args[0], args[1], args[2], args[3]);
     }
     file.close();
-    w.exec(ss.str());
-    w.commit();
     cout << "Table team initialized" << endl;
   }
   else {    
@@ -171,50 +148,40 @@ void initializeTeam(connection & c) {
 }
 
 void initializePlayer(connection & c) {
-  work w(c);
   ifstream file("player.txt");
   string line;
-  string presql("INSERT INTO PLAYER (PLAYER_ID, TEAM_ID, UNIFORM_NUM, FIRST_NAME, LAST_NAME, MPG, PPG, RPG, APG, SPG, BPG) VALUES (");
-  string sufsql(");\n");
   if (file.is_open())   {
-    stringstream ss;
+    int ints[6];
+    double doubles[2];
+    string names[2];
     while (getline(file, line)) {
       int p, pre = 0;
-      ss << presql;
       for (int i = 0;i < 3; i++) {        
         p = line.find(' ', pre);
         if (i > 0) {
-          ss << ", ";
+          ints[i-1] = atoi(line.substr(pre, p-pre).c_str());
         }
-        ss << line.substr(pre, p-pre);
         pre = p+1;
       }
       p = line.find(' ', pre);
-      string first_name = line.substr(pre, p-pre);
-      if (first_name.find('\'') != string::npos) {
-        int quote = first_name.find('\'');
-        first_name.replace(quote, 1, "''");
-      }
-      ss << ", '" << first_name << "'";
+      names[0] = line.substr(pre, p-pre);
       pre = p+1;
       p = line.find(' ', pre);
-      ss << ", '" << line.substr(pre, p-pre) << "'";
-      while (true) {
+      names[1] =  line.substr(pre, p-pre);
+      for (int i = 2; i<6; i++) {
         pre = p+1;
         p = line.find(' ',pre);
-        if (p == string::npos) {
-          ss << ", " << line.substr(pre);
-          break;
-        }
-        else {          
-          ss << ", " << line.substr(pre, p-pre);
-        }
-      }      
-      ss << sufsql;
+        ints[i] = atoi(line.substr(pre, p-pre).c_str());
+      }
+      pre = p+1;
+      p = line.find(' ',pre);
+      doubles[0] = stod(line.substr(pre, p-pre));
+      pre = p+1;
+      p = line.find(' ');
+      doubles[1] = stod(line.substr(pre, p-pre));
+      add_player(&c, ints[0], ints[1], names[0], names[1], ints[2], ints[3], ints[4], ints[5], doubles[0], doubles[1]);
     }
     file.close();
-    w.exec(ss.str());
-    w.commit();
     cout << "Table player initialized" << endl;
   }
   else {    
