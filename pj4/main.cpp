@@ -22,7 +22,7 @@ void dropTables(connection &c) {
   w.exec("DROP TABLE IF EXISTS STATE;");
   w.exec("DROP TABLE IF EXISTS COLOR;");    
   w.commit();
-  cout << "Old tables dropped" << endl;
+  //cout << "Old tables dropped" << endl;
 }
 
 /**
@@ -74,7 +74,7 @@ void createTables(connection & c) {
     ");";
   W.exec(sql);
   W.commit();
-  cout << "Table created successfully" << endl;    
+  //cout << "Table created successfully" << endl;    
 }
 
 void initializeColor(connection & c) {
@@ -89,7 +89,7 @@ void initializeColor(connection & c) {
       add_color(&c, line.substr(pre));
     }
     file.close();
-    cout << "Table color initialized" << endl;
+    //cout << "Table color initialized" << endl;
   }
   else {    
     throw new invalid_argument("Cannot open file color.txt");
@@ -108,7 +108,7 @@ void initializeState(connection & c) {
       add_state(&c, line.substr(pre));
     }
     file.close();
-    cout << "Table state initialized" << endl;
+    //    cout << "Table state initialized" << endl;
   }
   else {    
     throw new invalid_argument("Cannot open file state.txt");
@@ -140,7 +140,7 @@ void initializeTeam(connection & c) {
       add_team(&c, name, args[0], args[1], args[2], args[3]);
     }
     file.close();
-    cout << "Table team initialized" << endl;
+    //cout << "Table team initialized" << endl;
   }
   else {    
     throw new invalid_argument("Cannot open file team.txt");
@@ -182,7 +182,7 @@ void initializePlayer(connection & c) {
       add_player(&c, ints[0], ints[1], names[0], names[1], ints[2], ints[3], ints[4], ints[5], doubles[0], doubles[1]);
     }
     file.close();
-    cout << "Table player initialized" << endl;
+    //cout << "Table player initialized" << endl;
   }
   else {    
     throw new invalid_argument("Cannot open file player.txt");
