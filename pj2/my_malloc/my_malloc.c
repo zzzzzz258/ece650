@@ -1,6 +1,7 @@
 #include "my_malloc.h"
 
 #include <assert.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -11,12 +12,19 @@ list freeList = {NULL, NULL};
 int meta = sizeof(node);
 unsigned long segment_size = 0;
 
+// Lock for thread safe
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+// Thread Local Storage free list
+__thread list tls_freeList = {NULL, NULL};
+
 /*
   operations directly on node 
 */
 void initNode(node * newSpace, size_t size) {
   newSpace->next = NULL;
   newSpace->prev = NULL;
+  newSpace->isFree = 1;
   newSpace->size = size;
 }
 
@@ -36,11 +44,21 @@ node * mergeTwoNodes(node * first, node * second, list * l) {
   return first;
 }
 
-/*
-  insert a node into a list
-*/
-void insertNode(node * target, list * l) {
+node * findPositionToInsert(node * target, list * l) {
   if (l->head == NULL || l->head > target) {
+    return NULL;
+  }
+  else {
+    node * curr = l->head;
+    while (curr->next != NULL && curr->next < target) {
+      curr = curr->next;
+    }
+    return curr;
+  }
+}
+
+void insertNode(node * target, node * prev, list * l) {
+  if (NULL == prev) {
     // insert to the first position
     target->next = l->head;
     if (l->head != NULL) {
@@ -52,40 +70,25 @@ void insertNode(node * target, list * l) {
     l->head = target;
   }
   else {
-    node * curr = l->head;
-    while (curr->next != NULL && curr->next < target) {
-      curr = curr->next;
-    }
-    // insert after curr
-    if (curr->next != NULL) {
-      target->next = curr->next;
-      curr->next->prev = target;
+    // insert after prev
+    if (prev->next != NULL) {
+      target->next = prev->next;
+      prev->next->prev = target;
     }
     else {
       l->rear = target;
     }
-    target->prev = curr;
-    curr->next = target;
+    target->prev = prev;
+    prev->next = target;
   }
 }
 
 /*
-  append a node to the end of a list
+  insert a node into a list
 */
-void appendNode(node * target, list * l) {
-  node * rear = l->rear;
-  if (rear == NULL) {
-    l->head = target;
-    l->rear = target;
-    target->next = NULL;
-    target->prev = NULL;
-  }
-  else {
-    target->prev = rear;
-    target->next = NULL;
-    rear->next = target;
-    l->rear = target;
-  }
+void findPositionAndInsertNode(node * target, list * l) {
+  node * prev = findPositionToInsert(target, l);
+  insertNode(target, prev, l);
 }
 
 /*
@@ -129,12 +132,13 @@ node * checkAndMerge(node * curr, list * l) {
   insert second part node into freelist
   return: first node
 */
-node * splitBlock(node * target, size_t size) {
+node * splitBlock(node * target, size_t size, list * l) {
   // only split if rest block are larger than a meta size
   if (target->size > size + meta) {
+    // split out a new block and free it
     node * newBorn = (node *)((void *)target + meta + size);
     initNode(newBorn, target->size - size - meta);
-    insertNode(newBorn, &freeList);
+    findPositionAndInsertNode(newBorn, l);
     // set size only if new block is splited
     target->size = size;
   }
@@ -144,8 +148,16 @@ node * splitBlock(node * target, size_t size) {
 /*
   request new space of size (size + metadata) from system
 */
-node * requestNewSpace(size_t size) {
-  node * newSpace = (node *)sbrk(size + meta);
+node * requestNewSpace(size_t size, int isLock) {
+  node * newSpace;
+  if (isLock) {
+    newSpace = (node *)sbrk(size + meta);
+  }
+  else {
+    pthread_mutex_lock(&lock);
+    newSpace = (node *)sbrk(size + meta);
+    pthread_mutex_unlock(&lock);
+  }
   segment_size += (meta + size);
   initNode(newSpace, size);
   return newSpace;
@@ -154,37 +166,23 @@ node * requestNewSpace(size_t size) {
 /*
   malloc block of size from given block match
  */
-void * real_malloc(size_t size, node * match) {
+void * real_malloc(size_t size, node * match, list * l, int isLock) {
   if (match == NULL) {
-    match = requestNewSpace(size);
+    match = requestNewSpace(size, isLock);
   }
   else {
     // remove curr from free space list
-    removeNode(match, &freeList);
+    removeNode(match, l);
   }
+  match->isFree = 0;
   // split curr and put them into seperate lists
-  node * allocated = splitBlock(match, size);
+  node * allocated = splitBlock(match, size, l);
   return (void *)allocated + meta;
 }
 
-void * ff_malloc(size_t size) {
-  // find the right(first fit free) block to use
-  node * curr = freeList.head;
-  node * match = NULL;
-  // fetch first
-  while (curr != NULL) {
-    if (curr->size >= size) {
-      match = curr;
-      break;
-    }
-    curr = curr->next;
-  }
-  return real_malloc(size, match);
-}
-
-void * bf_malloc(size_t size) {
+node * findBestFit(size_t size, list * l) {
   // find the smallest block that bigger than size
-  node * curr = freeList.head;
+  node * curr = l->head;
   node * match = NULL;
   while (curr != NULL) {
     if (curr->size >= size && (match == NULL || curr->size < match->size)) {
@@ -195,70 +193,49 @@ void * bf_malloc(size_t size) {
     }
     curr = curr->next;
   }
-  return real_malloc(size, match);
+  return match;
 }
 
 /*
-  real free function to free a selected block
+ * Best Fit malloc
+ */
+void * bf_malloc(size_t size, list * l, int isLock) {
+  node * match = findBestFit(size, l);
+  void * ans = real_malloc(size, match, l, isLock);
+  return ans;
+}
+
+void * ts_malloc_lock(size_t size) {
+  pthread_mutex_lock(&lock);
+  void * ans = bf_malloc(size, &freeList, 1);
+  pthread_mutex_unlock(&lock);
+  return ans;
+}
+
+void * ts_malloc_nolock(size_t size) {
+  return bf_malloc(size, &tls_freeList, 0);
+}
+
+/*
+ * real free function to free a selected block 
 */
-void real_free(node * curr) {
-  insertNode(curr, &freeList);
-  checkAndMerge(curr, &freeList);
+void real_free(node * curr, list * l) {
+  curr->isFree = 1;
+  node * prev = findPositionToInsert(curr, l);
+  insertNode(curr, prev, l);
+  checkAndMerge(curr, l);
 }
 
 /*
   ptr is a pointer to real data, which follows metadata
 */
-void ff_free(void * ptr) {
-  real_free((node *)(ptr - meta));
+
+void ts_free_lock(void * ptr) {
+  pthread_mutex_lock(&lock);
+  real_free((node *)(ptr - meta), &freeList);
+  pthread_mutex_unlock(&lock);
 }
 
-void bf_free(void * ptr) {
-  real_free((node *)(ptr - meta));
-}
-
-/*
-  sum spaces of a list, including meta
-  used for performance comparasion
-*/
-unsigned long sum(list * l) {
-  node * curr = l->head;
-  unsigned long s = 0;
-  while (curr != NULL) {
-    s += (meta + curr->size);
-    curr = curr->next;
-  }
-  return s;
-}
-
-unsigned long get_data_segment_size() {
-  return segment_size;
-}
-unsigned long get_data_segment_free_space_size() {
-  return sum(&freeList);
-}
-
-/*
-  helper function to print block lists
-*/
-
-void printList(list * l) {
-  node * curr = l->head;
-  while (curr != NULL) {
-    printf("%p: size %lx\n", curr, curr->size);
-    if (curr == curr->next) {
-      printf("repeated element in list\n");
-      exit(EXIT_FAILURE);
-    }
-    if (curr->next == NULL) {
-      printf("rear is %p\n", l->rear);
-      assert(curr == l->rear);
-    }
-    curr = curr->next;
-  }
-}
-
-void printFreeList() {
-  printf("Free list:\n");
-  printList(&freeList);
+void ts_free_nolock(void * ptr) {
+  real_free((node *)(ptr - meta), &tls_freeList);
 }
