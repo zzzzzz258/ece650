@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <pqxx/pqxx>
 
 #include "exerciser.h"
@@ -6,6 +7,10 @@
 using namespace std;
 using namespace pqxx;
 
+
+/**
+ * Function in initialization phase
+ */
 
 /**
  * drop 4 tables
@@ -72,6 +77,162 @@ void createTables(connection & c) {
   cout << "Table created successfully" << endl;    
 }
 
+void initializeColor(connection & c) {
+  work w(c);
+  ifstream file("color.txt");
+  string line;
+  string presql("INSERT INTO COLOR (COLOR_ID, NAME) VALUES (");
+  string sufsql(");\n");
+  if (file.is_open())   {
+    stringstream ss;
+    while (getline(file, line)) {
+      int p, pre = 0;
+      ss << presql;
+      p = line.find(' ');
+      ss << line.substr(pre, p-pre);
+      pre = p+1;
+      ss << ", '" << line.substr(pre) << "'";
+      ss << sufsql;
+    }
+    file.close();
+    w.exec(ss.str());
+    w.commit();
+    cout << "Table color initialized" << endl;
+  }
+  else {    
+    throw new invalid_argument("Cannot open file color.txt");
+  }
+}
+
+void initializeState(connection & c) {
+  work w(c);
+  ifstream file("state.txt");
+  string line;
+  string presql("INSERT INTO STATE (STATE_ID, NAME) VALUES (");
+  string sufsql(");\n");
+  if (file.is_open())   {
+    stringstream ss;
+    while (getline(file, line)) {
+      int p, pre = 0;
+      ss << presql;
+      p = line.find(' ');
+      ss << line.substr(pre, p-pre);
+      pre = p+1;
+      ss << ", '" << line.substr(pre) << "'";
+      ss << sufsql;
+    }
+    file.close();
+    w.exec(ss.str());
+    w.commit();
+    cout << "Table state initialized" << endl;
+  }
+  else {    
+    throw new invalid_argument("Cannot open file state.txt");
+  }
+}
+
+void initializeTeam(connection & c) {
+  work w(c);
+  ifstream file("team.txt");
+  string line;
+  string presql("INSERT INTO TEAM (TEAM_ID, NAME, STATE_ID, COLOR_ID, WINS, LOSSES) VALUES (");
+  string sufsql(");\n");
+  if (file.is_open())   {
+    stringstream ss;
+    while (getline(file, line)) {
+      int p, pre = 0;
+      ss << presql;
+      p = line.find(' ');
+      ss << line.substr(pre, p-pre);
+      pre = p+1;
+      p = line.find(' ', pre);
+      ss << ", '" << line.substr(pre, p-pre) << "'";
+      while (true) {
+        pre = p+1;
+        p = line.find(' ',pre);
+        if (p == string::npos) {
+          ss << ", " << line.substr(pre);
+          break;
+        }
+        else {          
+          ss << ", " << line.substr(pre, p-pre);
+        }
+      }      
+      ss << sufsql;
+    }
+    file.close();
+    w.exec(ss.str());
+    w.commit();
+    cout << "Table team initialized" << endl;
+  }
+  else {    
+    throw new invalid_argument("Cannot open file team.txt");
+  }
+}
+
+void initializePlayer(connection & c) {
+  work w(c);
+  ifstream file("player.txt");
+  string line;
+  string presql("INSERT INTO PLAYER (PLAYER_ID, TEAM_ID, UNIFORM_NUM, FIRST_NAME, LAST_NAME, MPG, PPG, RPG, APG, SPG, BPG) VALUES (");
+  string sufsql(");\n");
+  if (file.is_open())   {
+    stringstream ss;
+    while (getline(file, line)) {
+      int p, pre = 0;
+      ss << presql;
+      for (int i = 0;i < 3; i++) {        
+        p = line.find(' ', pre);
+        if (i > 0) {
+          ss << ", ";
+        }
+        ss << line.substr(pre, p-pre);
+        pre = p+1;
+      }
+      p = line.find(' ', pre);
+      string first_name = line.substr(pre, p-pre);
+      if (first_name.find('\'') != string::npos) {
+        int quote = first_name.find('\'');
+        first_name.replace(quote, 1, "''");
+      }
+      ss << ", '" << first_name << "'";
+      pre = p+1;
+      p = line.find(' ', pre);
+      ss << ", '" << line.substr(pre, p-pre) << "'";
+      while (true) {
+        pre = p+1;
+        p = line.find(' ',pre);
+        if (p == string::npos) {
+          ss << ", " << line.substr(pre);
+          break;
+        }
+        else {          
+          ss << ", " << line.substr(pre, p-pre);
+        }
+      }      
+      ss << sufsql;
+    }
+    file.close();
+    w.exec(ss.str());
+    w.commit();
+    cout << "Table player initialized" << endl;
+  }
+  else {    
+    throw new invalid_argument("Cannot open file player.txt");
+  }
+}
+
+void initializeTables(connection & c) {
+  initializeColor(c);
+  initializeState(c);
+  initializeTeam(c);
+  initializePlayer(c);
+}
+
+/**
+ * End of function in initialization phase
+ */
+
 int main (int argc, char *argv[]) 
 {
 
@@ -100,7 +261,7 @@ int main (int argc, char *argv[])
   createTables(*C);
 
   //TODO: load each table with rows from the provided source txt files
-
+  initializeTables(*C);
   
   // exercise select queries
   exercise(C);

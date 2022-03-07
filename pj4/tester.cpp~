@@ -1,0 +1,40 @@
+#include <iostream>
+#include <fstream>
+
+int main() {
+  ifstream file("team.txt");
+  string line;
+  string presql("INSERT INTO TEAM (TEAM_ID, NAME, STATE_ID, COLOR_ID, WINS, LOSSES) VALUES (");
+  string sufsql(");\n");
+  if (file.is_open())   {
+    stringstream ss;
+    while (getline(file, line)) {
+      int p, pre = 0;
+      ss << presql;
+      p = line.find(' ');
+      ss << line.substr(pre, p);
+      pre = p+1;
+      p = line.find(' ', pre);
+      ss << ", '" << line.substr(pre, p) << "'";
+      while (true) {
+        pre = p+1;
+        p = line.find(' ',pre);
+        if (p == string::npos) {
+          ss << ", " << line.substr(pre);
+          break;
+        }
+        else {          
+          ss << ", " << line.substr(pre, p);
+        }
+      }      
+      ss << sufsql;
+    }
+    file.close();
+    w.exec(ss.str());
+    w.commit();
+    cout << "Table team initialized" << endl;
+  }
+  else {    
+    throw new invalid_argument("Cannot open file team.txt");
+  }
+}
