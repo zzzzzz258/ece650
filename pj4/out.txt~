@@ -1,0 +1,62 @@
+PLAYER_ID TEAM_ID UNIFORM_NUM FIRST_NAME LAST_NAME MPG PPG RPG APG SPG BPG
+30 3 5 Luke Kennard 36 20 5 3 0.8 0.4
+59 5 44 Ben Lammers 35 14 9 2 1.2 3.4
+87 7 5 Davon Reed 35 15 5 2 1.3 0.5
+98 8 4 Dennis SmithJr. 35 18 5 6 1.9 0.4
+130 10 32 Steve Vasturia 35 13 4 3 1.2 0.1
+153 12 3 Andrew WhiteIII 37 19 5 1 1.6 0.4
+154 12 20 Tyler Lydon 36 13 9 2 1.0 1.4
+NAME
+BostonCollege
+FloridaState
+VirginiaTech
+FIRST_NAME LAST_NAME
+Luke Kennard
+Jayson Tatum
+Grayson Allen
+Frank Jackson
+Amile Jefferson
+Matt Jones
+Harry Giles
+Chase Jeter
+Antonio Vrankovic
+Jack White
+Javin DeLaurier
+Marques Bolden
+Justin Robinson
+Nick Pagliuca
+Brennan Besser
+FIRST_NAME LAST_NAME UNIFORM_NUM
+Luke Kennard 5
+Jayson Tatum 0
+Grayson Allen 3
+Frank Jackson 15
+Amile Jefferson 21
+Matt Jones 13
+Harry Giles 1
+Chase Jeter 2
+Antonio Vrankovic 30
+Jack White 41
+Javin DeLaurier 12
+Marques Bolden 20
+Justin Robinson 50
+Nick Pagliuca 45
+Brennan Besser 53
+FIRST_NAME LAST_NAME NAME WINS
+Andrew WhiteIII UNC 14
+Tyler Lydon UNC 14
+Tyus Battle UNC 14
+John Gillon UNC 14
+Taurean Thompson UNC 14
+DaJuan Coleman UNC 14
+Tyler Roberson UNC 14
+Frank Howard UNC 14
+Paschal Chukwu UNC 14
+Ray Featherston UNC 14
+Doyin Akintobi-Adeyeye UNC 14
+Adrian Autry UNC 14
+Ky Feldman UNC 14
+Shaun Belbey UNC 14
+Mike Sutton UNC 14
+Evan Dourdas UNC 14
+Jonathan Radner UNC 14
