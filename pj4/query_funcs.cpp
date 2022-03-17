@@ -133,12 +133,12 @@ void query3(connection *C, string team_name)
  */
 void query4(connection *C, string team_state, string team_color)
 {
-  string sql = "select first_name, last_name, uniform_num from player inner join team on player.team_id=team.team_id inner join state on team.state_id=state.state_id inner join color on color.color_id=team.color_id where state.name = '" +C->esc(team_state)  + "' and color.name = '" + C->esc(team_color) + "'";
+  string sql = "select uniform_num, first_name, last_name from player inner join team on player.team_id=team.team_id inner join state on team.state_id=state.state_id inner join color on color.color_id=team.color_id where state.name = '" +C->esc(team_state)  + "' and color.name = '" + C->esc(team_color) + "'";
   nontransaction N(*C);
   result R(N.exec(sql));
-  cout << "FIRST_NAME LAST_NAME UNIFORM_NUM" << endl;
+  cout << "UNIFORM_NUM FIRST_NAME LAST_NAME" << endl;
   for (result::const_iterator c = R.begin(); c != R.end(); ++c) {
-    cout << c[0].as<string>() << " " << c[1].as<string>() << " " << c[2].as<int>()
+    cout << c[0].as<int>() << " " << c[1].as<string>() << " " << c[2].as<string>()
          << endl;
   }
 }
